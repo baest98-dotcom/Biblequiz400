@@ -7,11 +7,12 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="성경고사">
-<meta name="description" content="성경고사 문제은행 400문항 퀴즈 앱 — 구약 200 + 신약 200">
+<meta name="description" content="성경고사 문제은행 400문항 퀴즈 앱">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
 <title>성경고사 문제은행</title>
 <style>
+
 
 :root {
   --font-sans: -apple-system, BlinkMacSystemFont, 'Noto Sans KR', 'Malgun Gothic', sans-serif;
@@ -140,14 +141,16 @@ body{font-family:var(--font-sans)}
 .btn-retry-wrong:disabled{opacity:0.5;cursor:default}
 
 
+
+.screen { display: none; }
+.screen.active { display: flex; flex-direction: column; }
+#result-screen.active { display: block; }
 </style>
 </head>
 <body>
-<div id="app">
-<h2 class="sr-only" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)">성경고사 400문항 퀴즈</h2>
 
 <!-- 메인 화면 -->
-<div id="screen-main" style="padding:1.5rem 1rem;display:flex;flex-direction:column;gap:1rem">
+<div id="screen-main" class="screen active" style="padding:1.5rem 1rem;gap:1rem">
   <div class="logo">
     <div class="logo-icon">✝️</div>
     <h1>성경고사 문제은행</h1>
@@ -171,8 +174,8 @@ body{font-family:var(--font-sans)}
   </div>
 </div>
 
-<!-- 이어서/처음부터 선택 화면 (순서대로 선택 시) -->
-<div id="screen-resume" style="display:none;padding:1.5rem 1rem;flex-direction:column;gap:1rem">
+<!-- 이어서/처음부터 선택 화면 -->
+<div id="screen-resume" class="screen" style="padding:1.5rem 1rem;gap:1rem">
   <div class="logo">
     <div class="logo-icon">✝️</div>
     <h1>순서대로 풀기</h1>
@@ -181,13 +184,13 @@ body{font-family:var(--font-sans)}
     <div style="font-size:14px;font-weight:500;color:var(--text-accent);margin-bottom:6px">이전 기록이 있습니다</div>
     <div id="resume-info" style="font-size:13px;color:var(--text-secondary)"></div>
   </div>
-  <button onclick="resumeSeq()" style="background:var(--fill-accent);color:var(--on-accent);border:none;border-radius:10px;padding:14px;font-size:15px;font-weight:500;cursor:pointer;width:100%;-webkit-tap-highlight-color:transparent">이어서 풀기</button>
-  <button onclick="startSeq()" style="background:var(--surface-1);border:0.5px solid var(--border);border-radius:10px;padding:14px;font-size:14px;color:var(--text-secondary);cursor:pointer;width:100%;-webkit-tap-highlight-color:transparent">처음부터 시작</button>
+  <button onclick="doResume()" style="background:var(--fill-accent);color:var(--on-accent);border:none;border-radius:10px;padding:14px;font-size:15px;font-weight:500;cursor:pointer;width:100%">이어서 풀기</button>
+  <button onclick="startSeq()" style="background:var(--surface-1);border:0.5px solid var(--border);border-radius:10px;padding:14px;font-size:14px;color:var(--text-secondary);cursor:pointer;width:100%">처음부터 시작</button>
   <button onclick="goMain()" style="background:transparent;border:none;padding:8px;font-size:13px;color:var(--text-muted);cursor:pointer;width:100%">← 돌아가기</button>
 </div>
 
 <!-- 퀴즈 화면 -->
-<div id="quiz-screen" style="display:none;flex-direction:column;min-height:100vh">
+<div id="quiz-screen" class="screen" style="min-height:100vh">
   <div class="q-header">
     <div class="header-row">
       <div class="q-num" id="q-num">1 / 400</div>
@@ -211,7 +214,7 @@ body{font-family:var(--font-sans)}
 </div>
 
 <!-- 결과 화면 -->
-<div id="result-screen" style="display:none;padding:1.5rem 1rem;text-align:center">
+<div id="result-screen" class="screen" style="padding:1.5rem 1rem;text-align:center">
   <div class="result-title" id="res-title">완료!</div>
   <div class="result-sub" id="res-sub"></div>
   <div class="score-ring">
@@ -236,12 +239,9 @@ body{font-family:var(--font-sans)}
   </div>
 </div>
 
-</div>
 <script>
 if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('sw.js');
-  });
+  window.addEventListener('load', () => navigator.serviceWorker.register('sw.js'));
 }
 
 function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
@@ -654,12 +654,18 @@ const NT=[
 
 const ALL=[...OT.map((q,i)=>({...q,sec:'OT',num:i+1})),...NT.map((q,i)=>({...q,sec:'NT',num:i+1}))];
 
-// 상태
+// 전역 상태
 let queue=[], qIdx=0, okSet=new Set(), noSet=new Set(), answered=false, isRetry=false, isSeq=false;
+const SAVE_KEY='bqSeqSave';
+
+// 화면 전환 - CSS class 방식
+const SCREENS = ['screen-main','screen-resume','quiz-screen','result-screen'];
+function showScreen(id) {
+  SCREENS.forEach(sid => document.getElementById(sid).classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
 
 // 저장/불러오기
-const SAVE_KEY = 'bqSeqSave';
-
 function saveSeq() {
   try {
     localStorage.setItem(SAVE_KEY, JSON.stringify({
@@ -669,51 +675,30 @@ function saveSeq() {
     }));
   } catch(e) {}
 }
-
 function clearSeq() {
   try { localStorage.removeItem(SAVE_KEY); } catch(e) {}
 }
-
 function loadSeq() {
   try {
-    const raw = localStorage.getItem(SAVE_KEY);
-    if (!raw) return null;
-    const s = JSON.parse(raw);
-    if (s === null || s.qIdx === undefined) return null;
+    const s = JSON.parse(localStorage.getItem(SAVE_KEY));
+    if (!s || s.qIdx === undefined) return null;
     return s;
   } catch(e) { return null; }
 }
 
-// 화면 전환
-function showOnly(id) {
-  ['screen-main','screen-resume','quiz-screen','result-screen'].forEach(sid => {
-    const el = document.getElementById(sid);
-    el.style.display = 'none';
-  });
-  const target = document.getElementById(id);
-  target.style.display = id === 'quiz-screen' ? 'flex' : 
-                          id === 'screen-resume' ? 'flex' : 
-                          id === 'screen-main' ? 'flex' : 'block';
-  if (id === 'screen-main' || id === 'screen-resume') {
-    target.style.flexDirection = 'column';
-  }
-}
-
 // 메인으로
 function goMain() {
-  showOnly('screen-main');
+  showScreen('screen-main');
 }
 
 // 순서대로 버튼 클릭
 function clickSeq() {
   const s = loadSeq();
   if (s && s.qIdx > 0 && s.qIdx < ALL.length) {
-    // 이전 기록 있음 → 선택 화면
     document.getElementById('resume-info').textContent =
       s.qIdx + '번 문제까지 풀었습니다 (정답 ' + s.okArr.length + '개 / 오답 ' + s.noArr.length + '개)';
-    showOnly('screen-resume');
+    showScreen('screen-resume');
   } else {
-    // 이전 기록 없음 → 바로 시작
     startSeq();
   }
 }
@@ -721,30 +706,25 @@ function clickSeq() {
 // 순서대로 처음부터
 function startSeq() {
   clearSeq();
-  queue = [...ALL];
-  qIdx = 0; okSet = new Set(); noSet = new Set(); answered = false; isRetry = false; isSeq = true;
-  showOnly('quiz-screen');
+  queue=[...ALL]; qIdx=0; okSet=new Set(); noSet=new Set(); answered=false; isRetry=false; isSeq=true;
+  showScreen('quiz-screen');
   renderQ();
 }
 
 // 이어서 풀기
-function resumeSeq() {
+function doResume() {
   const s = loadSeq();
   if (!s) { startSeq(); return; }
-  queue = [...ALL];
-  qIdx = s.qIdx;
-  okSet = new Set(s.okArr);
-  noSet = new Set(s.noArr);
-  answered = false; isRetry = false; isSeq = true;
-  showOnly('quiz-screen');
+  queue=[...ALL]; qIdx=s.qIdx; okSet=new Set(s.okArr); noSet=new Set(s.noArr);
+  answered=false; isRetry=false; isSeq=true;
+  showScreen('quiz-screen');
   renderQ();
 }
 
 // 무작위
 function startRandom() {
-  queue = shuffle([...ALL]);
-  qIdx = 0; okSet = new Set(); noSet = new Set(); answered = false; isRetry = false; isSeq = false;
-  showOnly('quiz-screen');
+  queue=shuffle([...ALL]); qIdx=0; okSet=new Set(); noSet=new Set(); answered=false; isRetry=false; isSeq=false;
+  showScreen('quiz-screen');
   renderQ();
 }
 
@@ -754,54 +734,51 @@ function renderQ() {
   answered = false;
   const q = queue[qIdx];
   const total = queue.length;
-  document.getElementById('prog').style.width = Math.round(qIdx / total * 100) + '%';
-  document.getElementById('q-num').textContent = (qIdx + 1) + ' / ' + total;
+  document.getElementById('prog').style.width = Math.round(qIdx/total*100)+'%';
+  document.getElementById('q-num').textContent = (qIdx+1)+' / '+total;
   document.getElementById('cnt-ok').textContent = okSet.size;
   document.getElementById('cnt-no').textContent = noSet.size;
   const badge = document.getElementById('sec-badge');
-  badge.textContent = q.sec === 'OT' ? '구약 ' + q.num + '번' : '신약 ' + q.num + '번';
-  badge.className = 'sec-badge ' + q.sec;
+  badge.textContent = q.sec==='OT' ? '구약 '+q.num+'번' : '신약 '+q.num+'번';
+  badge.className = 'sec-badge '+q.sec;
   document.getElementById('q-text').textContent = q.q;
   const fb = document.getElementById('feedback');
-  fb.className = 'feedback-box'; fb.textContent = '';
-  document.getElementById('btn-next').style.display = 'none';
+  fb.className='feedback-box'; fb.textContent='';
+  document.getElementById('btn-next').style.display='none';
   const opts = document.getElementById('options');
-  opts.innerHTML = '';
-  const letters = ['①','②','③','④'];
-  q.o.forEach((o, i) => {
+  opts.innerHTML='';
+  ['①','②','③','④'].forEach((letter,i) => {
     const btn = document.createElement('button');
-    btn.className = 'opt-btn';
-    btn.innerHTML = '<span class="opt-letter">' + letters[i] + '</span><span>' + o + '</span>';
-    btn.onclick = () => pick(i, q.a, btn, q);
+    btn.className='opt-btn';
+    btn.innerHTML='<span class="opt-letter">'+letter+'</span><span>'+q.o[i]+'</span>';
+    btn.onclick=()=>pick(i,q.a,btn,q);
     opts.appendChild(btn);
   });
-  document.getElementById('q-body').scrollTop = 0;
+  document.getElementById('q-body').scrollTop=0;
 }
 
 // 답 선택
 function pick(i, ans, btn, q) {
   if (answered) return;
-  answered = true;
-  const origIdx = ALL.indexOf(q);
-  document.querySelectorAll('.opt-btn').forEach(b => b.disabled = true);
-  const letters = ['①','②','③','④'];
-  const fb = document.getElementById('feedback');
-  if (i === ans) {
+  answered=true;
+  const origIdx=ALL.indexOf(q);
+  document.querySelectorAll('.opt-btn').forEach(b=>b.disabled=true);
+  const fb=document.getElementById('feedback');
+  if (i===ans) {
     btn.classList.add('correct');
     okSet.add(origIdx); noSet.delete(origIdx);
-    fb.className = 'feedback-box ok show';
-    fb.textContent = '✓ 정답입니다!';
+    fb.className='feedback-box ok show';
+    fb.textContent='✓ 정답입니다!';
   } else {
     btn.classList.add('wrong');
     document.querySelectorAll('.opt-btn')[ans].classList.add('reveal');
     noSet.add(origIdx); okSet.delete(origIdx);
-    fb.className = 'feedback-box no show';
-    fb.textContent = '✗ 오답입니다. 정답: ' + letters[ans] + ' ' + q.o[ans];
+    fb.className='feedback-box no show';
+    fb.textContent='✗ 오답입니다. 정답: '+'①②③④'[ans]+' '+q.o[ans];
   }
-  document.getElementById('btn-next').style.display = 'block';
-  document.getElementById('cnt-ok').textContent = okSet.size;
-  document.getElementById('cnt-no').textContent = noSet.size;
-  // 순서대로 모드일 때만 저장
+  document.getElementById('btn-next').style.display='block';
+  document.getElementById('cnt-ok').textContent=okSet.size;
+  document.getElementById('cnt-no').textContent=noSet.size;
   if (isSeq) saveSeq();
 }
 
@@ -817,31 +794,27 @@ function endEarly() { showResult(); }
 
 // 결과
 function showResult() {
-  showOnly('result-screen');
-  const total = okSet.size + noSet.size;
-  const ok = okSet.size;
-  const pct = total > 0 ? Math.round(ok / total * 100) : 0;
-  document.getElementById('res-title').textContent = isRetry ? '오답 재도전 완료!' : '퀴즈 완료!';
-  document.getElementById('res-sub').textContent = '수고하셨습니다 🎉';
-  document.getElementById('r-total').textContent = total;
-  document.getElementById('r-ok').textContent = ok;
-  document.getElementById('r-no').textContent = noSet.size;
-  document.getElementById('pct-text').textContent = pct + '%';
-  document.getElementById('ring-arc').setAttribute('stroke-dashoffset', (289*(1-pct/100)).toFixed(1));
-  const btn = document.getElementById('btn-retry-wrong');
-  btn.disabled = noSet.size === 0;
-  btn.textContent = noSet.size > 0 ? '오답 ' + noSet.size + '문항 다시 풀기' : '오답 없음';
-  // 완료 시 저장 삭제
   if (!isRetry) clearSeq();
+  showScreen('result-screen');
+  const total=okSet.size+noSet.size, ok=okSet.size;
+  const pct=total>0?Math.round(ok/total*100):0;
+  document.getElementById('res-title').textContent=isRetry?'오답 재도전 완료!':'퀴즈 완료!';
+  document.getElementById('res-sub').textContent='수고하셨습니다 🎉';
+  document.getElementById('r-total').textContent=total;
+  document.getElementById('r-ok').textContent=ok;
+  document.getElementById('r-no').textContent=noSet.size;
+  document.getElementById('pct-text').textContent=pct+'%';
+  document.getElementById('ring-arc').setAttribute('stroke-dashoffset',(289*(1-pct/100)).toFixed(1));
+  const btn=document.getElementById('btn-retry-wrong');
+  btn.disabled=noSet.size===0;
+  btn.textContent=noSet.size>0?'오답 '+noSet.size+'문항 다시 풀기':'오답 없음';
 }
 
 // 오답 재도전
 function retryWrong() {
-  const wrong = [...noSet].map(i => ALL[i]);
-  isRetry = true; isSeq = false;
-  queue = wrong;
-  qIdx = 0; answered = false;
-  showOnly('quiz-screen');
+  queue=[...noSet].map(i=>ALL[i]);
+  qIdx=0; answered=false; isRetry=true; isSeq=false;
+  showScreen('quiz-screen');
   renderQ();
 }
 </script>
