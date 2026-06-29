@@ -647,7 +647,9 @@ const NT=[
 
 
 const ALL=[...OT.map((q,i)=>({...q,sec:'OT',num:i+1})),...NT.map((q,i)=>({...q,sec:'NT',num:i+1}))];
-let queue=[],idx=0,okSet=new Set(),noSet=new Set(),answered=false,isRetry=false;
+
+
+let queue=[], qIdx=0, okSet=new Set(), noSet=new Set(), answered=false, isRetry=false;
 
 const SAVE_KEY = 'bqSave';
 
