@@ -677,21 +677,47 @@ function showScreen(id) {
 }
 
 // 저장/불러오기
-function saveSeq() {
+// localStorage 가용 여부 확인
+function storageAvailable() {
   try {
-    localStorage.setItem(SAVE_KEY, JSON.stringify({
-      qIdx: qIdx,
-      okArr: [...okSet],
-      noArr: [...noSet]
-    }));
-  } catch(e) {}
+    const t = '__test__';
+    localStorage.setItem(t, t);
+    localStorage.removeItem(t);
+    return true;
+  } catch(e) { return false; }
 }
+
+// 인메모리 폴백 (localStorage 불가 시)
+let _memSave = null;
+
+function saveSeq() {
+  const data = JSON.stringify({
+    qIdx: qIdx,
+    okArr: [...okSet],
+    noArr: [...noSet]
+  });
+  try {
+    localStorage.setItem(SAVE_KEY, data);
+  } catch(e) {}
+  try {
+    sessionStorage.setItem(SAVE_KEY, data);
+  } catch(e) {}
+  _memSave = data;
+}
+
 function clearSeq() {
   try { localStorage.removeItem(SAVE_KEY); } catch(e) {}
+  try { sessionStorage.removeItem(SAVE_KEY); } catch(e) {}
+  _memSave = null;
 }
+
 function loadSeq() {
+  let raw = null;
+  try { raw = localStorage.getItem(SAVE_KEY); } catch(e) {}
+  if (!raw) { try { raw = sessionStorage.getItem(SAVE_KEY); } catch(e) {} }
+  if (!raw) { raw = _memSave; }
   try {
-    const s = JSON.parse(localStorage.getItem(SAVE_KEY));
+    const s = JSON.parse(raw);
     if (!s || s.qIdx === undefined) return null;
     return s;
   } catch(e) { return null; }
