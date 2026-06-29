@@ -148,6 +148,15 @@ body{font-family:var(--font-sans)}
 
 <!-- Start -->
 <div id="start-screen">
+<div id="resume-banner" style="display:none;background:var(--bg-accent);border:0.5px solid var(--border-accent);border-radius:12px;padding:1rem 1.25rem;flex-direction:column;gap:10px">
+  <div style="font-size:14px;font-weight:500;color:var(--text-accent)">이어서 풀기</div>
+  <div id="resume-info" style="font-size:12px;color:var(--text-secondary)"></div>
+  <div style="display:flex;gap:8px">
+    <button onclick="resumeQuiz(document.getElementById('resume-banner')._saved)" style="flex:1;background:var(--fill-accent);color:var(--on-accent);border:none;border-radius:8px;padding:10px;font-size:14px;font-weight:500;cursor:pointer">이어서 풀기</button>
+    <button onclick="clearSave();checkResume()" style="background:transparent;border:0.5px solid var(--border-strong);border-radius:8px;padding:10px 14px;font-size:13px;color:var(--text-secondary);cursor:pointer">처음부터</button>
+  </div>
+</div>
+
   <div class="logo">
     <div class="logo-icon">✝️</div>
     <h1>성경고사 문제은행</h1>
@@ -224,6 +233,48 @@ body{font-family:var(--font-sans)}
 
 
 <script>
+
+const SAVE_KEY = 'bibleQuizSave';
+
+function saveState() {
+  if (isRetry) return;
+  const state = {
+    mode: queue === ALL ? 'seq' : 'rnd',
+    queueIds: queue.map(q => ALL.indexOf(q)),
+    qIdx,
+    okArr: [...okSet],
+    noArr: [...noSet]
+  };
+  try { localStorage.setItem(SAVE_KEY, JSON.stringify(state)); } catch(e) {}
+}
+
+function clearSave() {
+  try { localStorage.removeItem(SAVE_KEY); } catch(e) {}
+}
+
+function loadSave() {
+  try {
+    const raw = localStorage.getItem(SAVE_KEY);
+    if (!raw) return null;
+    const s = JSON.parse(raw);
+    if (!s.queueIds || !Array.isArray(s.queueIds)) return null;
+    return s;
+  } catch(e) { return null; }
+}
+
+function resumeQuiz(s) {
+  document.getElementById('start-screen').style.display = 'none';
+  document.getElementById('result-screen').style.display = 'none';
+  document.getElementById('quiz-screen').style.display = 'flex';
+  queue = s.queueIds.map(i => ALL[i]);
+  qIdx = s.qIdx;
+  okSet = new Set(s.okArr);
+  noSet = new Set(s.noArr);
+  answered = false;
+  isRetry = false;
+  renderQ();
+}
+
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('sw.js').then(r => console.log('SW registered')).catch(e => console.log('SW error', e));
@@ -643,15 +694,15 @@ let queue=[],idx=0,okSet=new Set(),noSet=new Set(),answered=false,isRetry=false;
 function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
 
 function startQuiz(mode,custom){
+  clearSave();
   document.getElementById('start-screen').style.display='none';
   document.getElementById('result-screen').style.display='none';
   const qs=document.getElementById('quiz-screen');
   qs.style.display='flex';
   queue=custom?[...custom]:mode==='rnd'?shuffle([...ALL]):[...ALL];
-  idx=0;okSet=new Set();noSet=new Set();answered=false;isRetry=!!custom;
+  qIdx=0;okSet=new Set();noSet=new Set();answered=false;isRetry=!!custom;
   renderQ();
 }
-
 function renderQ(){
   if(idx>=queue.length){showResult();return;}
   answered=false;
@@ -705,13 +756,15 @@ function pick(i,ans,btn,q){
   document.getElementById('btn-next').style.display='block';
   document.getElementById('cnt-ok').textContent=okSet.size;
   document.getElementById('cnt-no').textContent=noSet.size;
-}
 
+  saveState();
+}
 function nextQ(){idx++;renderQ();}
 
 function endEarly(){showResult();}
 
 function showResult(){
+  clearSave();
   document.getElementById('quiz-screen').style.display='none';
   const rs=document.getElementById('result-screen');
   rs.style.display='block';
@@ -738,10 +791,28 @@ function retryWrong(){
 }
 
 function restart(){
+  clearSave();
   document.getElementById('result-screen').style.display='none';
-  document.getElementById('start-screen').style.display='flex';
-  document.getElementById('start-screen').style.flexDirection='column';
+  const ss=document.getElementById('start-screen');
+  ss.style.display='flex';
+  ss.style.flexDirection='column';
+  checkResume();
 }
+
+
+function checkResume() {
+  const s = loadSave();
+  const banner = document.getElementById('resume-banner');
+  if (s && s.qIdx < s.queueIds.length) {
+    banner.style.display = 'flex';
+    document.getElementById('resume-info').textContent =
+      (s.qIdx) + '번까지 풀었습니다 (정답 ' + s.okArr.length + '개 / 오답 ' + s.noArr.length + '개)';
+    banner._saved = s;
+  } else {
+    banner.style.display = 'none';
+  }
+}
+window.addEventListener('load', checkResume);
 
 </script>
 </body>
