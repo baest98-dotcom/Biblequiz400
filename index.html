@@ -152,7 +152,7 @@ body{font-family:var(--font-sans)}
   <div style="font-size:14px;font-weight:500;color:var(--text-accent)">이어서 풀기</div>
   <div id="resume-info" style="font-size:12px;color:var(--text-secondary)"></div>
   <div style="display:flex;gap:8px">
-    <button onclick="resumeQuiz(document.getElementById('resume-banner')._saved)" style="flex:1;background:var(--fill-accent);color:var(--on-accent);border:none;border-radius:8px;padding:10px;font-size:14px;font-weight:500;cursor:pointer">이어서 풀기</button>
+    <button onclick="resumeQuiz()" style="flex:1;background:var(--fill-accent);color:var(--on-accent);border:none;border-radius:8px;padding:10px;font-size:14px;font-weight:500;cursor:pointer">이어서 풀기</button>
     <button onclick="clearSave();checkResume()" style="background:transparent;border:0.5px solid var(--border-strong);border-radius:8px;padding:10px 14px;font-size:13px;color:var(--text-secondary);cursor:pointer">처음부터</button>
   </div>
 </div>
@@ -234,54 +234,12 @@ body{font-family:var(--font-sans)}
 
 <script>
 
-const SAVE_KEY = 'bibleQuizSave';
-
-function saveState() {
-  if (isRetry) return;
-  const state = {
-    mode: queue === ALL ? 'seq' : 'rnd',
-    queueIds: queue.map(q => ALL.indexOf(q)),
-    qIdx,
-    okArr: [...okSet],
-    noArr: [...noSet]
-  };
-  try { localStorage.setItem(SAVE_KEY, JSON.stringify(state)); } catch(e) {}
-}
-
-function clearSave() {
-  try { localStorage.removeItem(SAVE_KEY); } catch(e) {}
-}
-
-function loadSave() {
-  try {
-    const raw = localStorage.getItem(SAVE_KEY);
-    if (!raw) return null;
-    const s = JSON.parse(raw);
-    if (!s.queueIds || !Array.isArray(s.queueIds)) return null;
-    return s;
-  } catch(e) { return null; }
-}
-
-function resumeQuiz(s) {
-  document.getElementById('start-screen').style.display = 'none';
-  document.getElementById('result-screen').style.display = 'none';
-  document.getElementById('quiz-screen').style.display = 'flex';
-  queue = s.queueIds.map(i => ALL[i]);
-  qIdx = s.qIdx;
-  okSet = new Set(s.okArr);
-  noSet = new Set(s.noArr);
-  answered = false;
-  isRetry = false;
-  renderQ();
-}
-
+const 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('sw.js').then(r => console.log('SW registered')).catch(e => console.log('SW error', e));
   });
-}
-
-
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
 const OT=[
 {q:"다음에서 창세기 1장의 창조기사 내용 중 틀린 것은?",o:["첫째 날 – 빛을 창조하시고 빛과 어둠을 나누심","둘째 날 - 물을 위아래로 나누어 궁창을 만드심","넷째 날 - 하늘의 궁창에 광명체(해,달,별)를 만드심","다섯째 날 – 땅의 생물들을 종류대로 만드심"],a:3},
 {q:"하나님의 천지창조 중 넷째 날에 해당되는 것은?",o:["궁창","해와 달과 별","육지와 바다","바다 생물과 공중의 새"],a:1},
@@ -691,114 +649,33 @@ const NT=[
 const ALL=[...OT.map((q,i)=>({...q,sec:'OT',num:i+1})),...NT.map((q,i)=>({...q,sec:'NT',num:i+1}))];
 let queue=[],idx=0,okSet=new Set(),noSet=new Set(),answered=false,isRetry=false;
 
-function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+const SAVE_KEY = 'bqSave';
 
-function startQuiz(mode,custom){
-  clearSave();
-  document.getElementById('start-screen').style.display='none';
-  document.getElementById('result-screen').style.display='none';
-  const qs=document.getElementById('quiz-screen');
-  qs.style.display='flex';
-  queue=custom?[...custom]:mode==='rnd'?shuffle([...ALL]):[...ALL];
-  qIdx=0;okSet=new Set();noSet=new Set();answered=false;isRetry=!!custom;
-  renderQ();
-}
-function renderQ(){
-  if(qIdx>=queue.length){showResult();return;}
-  answered=false;
-  const q=queue[qIdx];
-  const total=queue.length;
-  const pct=Math.round(qIdx/total*100);
-  document.getElementById('prog').style.width=pct+'%';
-  document.getElementById('q-num').textContent=(qIdx+1)+' / '+total;
-  document.getElementById('cnt-ok').textContent=okSet.size;
-  document.getElementById('cnt-no').textContent=noSet.size;
-  const badge=document.getElementById('sec-badge');
-  badge.textContent=q.sec==='OT'?'구약 '+q.num+'번':'신약 '+q.num+'번';
-  badge.className='sec-badge '+(q.sec);
-  document.getElementById('q-text').textContent=q.q;
-  const fb=document.getElementById('feedback');
-  fb.className='feedback-box';fb.textContent='';
-  document.getElementById('btn-next').style.display='none';
-  const opts=document.getElementById('options');
-  opts.innerHTML='';
-  const letters=['①','②','③','④'];
-  q.o.forEach((o,i)=>{
-    const btn=document.createElement('button');
-    btn.className='opt-btn';
-    btn.innerHTML=`<span class="opt-letter">${letters[i]}</span><span>${o}</span>`;
-    btn.onclick=()=>pick(i,q.a,btn,q);
-    opts.appendChild(btn);
-  });
-  document.getElementById('q-body').scrollTop=0;
+function saveState() {
+  if (isRetry) return;
+  try {
+    localStorage.setItem(SAVE_KEY, JSON.stringify({
+      queueIds: queue.map(q => ALL.indexOf(q)),
+      qIdx: qIdx,
+      okArr: [...okSet],
+      noArr: [...noSet]
+    }));
+  } catch(e) {}
 }
 
-function pick(i,ans,btn,q){
-  if(answered)return;
-  answered=true;
-  const origIdx=ALL.indexOf(q);
-  const opts=document.querySelectorAll('.opt-btn');
-  opts.forEach(b=>b.disabled=true);
-  const letters=['①','②','③','④'];
-  const fb=document.getElementById('feedback');
-  if(i===ans){
-    btn.classList.add('correct');
-    okSet.add(origIdx);noSet.delete(origIdx);
-    fb.className='feedback-box ok show';
-    fb.textContent='✓ 정답입니다!';
-  } else {
-    btn.classList.add('wrong');
-    opts[ans].classList.add('reveal');
-    noSet.add(origIdx);okSet.delete(origIdx);
-    fb.className='feedback-box no show';
-    fb.textContent='✗ 오답입니다. 정답: '+letters[ans]+' '+q.o[ans];
-  }
-  document.getElementById('btn-next').style.display='block';
-  document.getElementById('cnt-ok').textContent=okSet.size;
-  document.getElementById('cnt-no').textContent=noSet.size;
-
-  saveState();
-}
-function nextQ(){qIdx++;saveState();renderQ();}
-
-function endEarly(){showResult();}
-
-function showResult(){
-  clearSave();
-  document.getElementById('quiz-screen').style.display='none';
-  const rs=document.getElementById('result-screen');
-  rs.style.display='block';
-  const total=okSet.size+noSet.size;
-  const ok=okSet.size;
-  const pct=total>0?Math.round(ok/total*100):0;
-  document.getElementById('res-title').textContent=isRetry?'오답 재도전 완료!':'퀴즈 완료!';
-  document.getElementById('res-sub').textContent='수고하셨습니다 🎉';
-  document.getElementById('r-total').textContent=total;
-  document.getElementById('r-ok').textContent=ok;
-  document.getElementById('r-no').textContent=noSet.size;
-  document.getElementById('pct-text').textContent=pct+'%';
-  const arc=289*(1-pct/100);
-  document.getElementById('ring-arc').setAttribute('stroke-dashoffset',arc.toFixed(1));
-  const btn=document.getElementById('btn-retry-wrong');
-  btn.disabled=noSet.size===0;
-  btn.textContent=noSet.size>0?`오답 ${noSet.size}문항 다시 풀기`:'오답 없음';
+function clearSave() {
+  try { localStorage.removeItem(SAVE_KEY); } catch(e) {}
 }
 
-function retryWrong(){
-  const wrong=[...noSet].map(i=>ALL[i]);
-  isRetry=true;
-  startQuiz(null,wrong);
+function loadSave() {
+  try {
+    const raw = localStorage.getItem(SAVE_KEY);
+    if (!raw) return null;
+    const s = JSON.parse(raw);
+    if (!s || !Array.isArray(s.queueIds) || s.queueIds.length === 0) return null;
+    return s;
+  } catch(e) { return null; }
 }
-
-function restart(){
-  clearSave();
-  document.getElementById('result-screen').style.display='none';
-  const ss=document.getElementById('start-screen');
-  ss.style.display='flex';
-  ss.style.flexDirection='column';
-  checkResume();
-}
-
 
 function checkResume() {
   const s = loadSave();
@@ -806,14 +683,132 @@ function checkResume() {
   if (s && s.qIdx < s.queueIds.length) {
     banner.style.display = 'flex';
     document.getElementById('resume-info').textContent =
-      (s.qIdx) + '번까지 풀었습니다 (정답 ' + s.okArr.length + '개 / 오답 ' + s.noArr.length + '개)';
-    banner._saved = s;
+      s.qIdx + '번 문제까지 풀었습니다 (정답 ' + s.okArr.length + '개 / 오답 ' + s.noArr.length + '개)';
   } else {
     banner.style.display = 'none';
   }
 }
-window.addEventListener('load', checkResume);
 
+function resumeQuiz() {
+  const s = loadSave();
+  if (!s) return;
+  queue = s.queueIds.map(i => ALL[i]);
+  qIdx = s.qIdx;
+  okSet = new Set(s.okArr);
+  noSet = new Set(s.noArr);
+  answered = false;
+  isRetry = false;
+  document.getElementById('start-screen').style.display = 'none';
+  document.getElementById('result-screen').style.display = 'none';
+  document.getElementById('quiz-screen').style.display = 'flex';
+  renderQ();
+}
+
+function startQuiz(mode, custom) {
+  clearSave();
+  queue = custom ? [...custom] : mode === 'rnd' ? shuffle([...ALL]) : [...ALL];
+  qIdx = 0; okSet = new Set(); noSet = new Set(); answered = false; isRetry = !!custom;
+  document.getElementById('start-screen').style.display = 'none';
+  document.getElementById('result-screen').style.display = 'none';
+  document.getElementById('quiz-screen').style.display = 'flex';
+  renderQ();
+}
+
+function renderQ() {
+  if (qIdx >= queue.length) { showResult(); return; }
+  answered = false;
+  const q = queue[qIdx];
+  const total = queue.length;
+  document.getElementById('prog').style.width = Math.round(qIdx / total * 100) + '%';
+  document.getElementById('q-num').textContent = (qIdx + 1) + ' / ' + total;
+  document.getElementById('cnt-ok').textContent = okSet.size;
+  document.getElementById('cnt-no').textContent = noSet.size;
+  const badge = document.getElementById('sec-badge');
+  badge.textContent = q.sec === 'OT' ? '구약 ' + q.num + '번' : '신약 ' + q.num + '번';
+  badge.className = 'sec-badge ' + q.sec;
+  document.getElementById('q-text').textContent = q.q;
+  const fb = document.getElementById('feedback');
+  fb.className = 'feedback-box'; fb.textContent = '';
+  document.getElementById('btn-next').style.display = 'none';
+  const opts = document.getElementById('options');
+  opts.innerHTML = '';
+  const letters = ['①','②','③','④'];
+  q.o.forEach((o, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'opt-btn';
+    btn.innerHTML = '<span class="opt-letter">' + letters[i] + '</span><span>' + o + '</span>';
+    btn.onclick = () => pick(i, q.a, btn, q);
+    opts.appendChild(btn);
+  });
+}
+
+function pick(i, ans, btn, q) {
+  if (answered) return;
+  answered = true;
+  const origIdx = ALL.indexOf(q);
+  const opts = document.querySelectorAll('.opt-btn');
+  opts.forEach(b => b.disabled = true);
+  const letters = ['①','②','③','④'];
+  const fb = document.getElementById('feedback');
+  if (i === ans) {
+    btn.classList.add('correct');
+    okSet.add(origIdx); noSet.delete(origIdx);
+    fb.className = 'feedback-box ok show';
+    fb.textContent = '✓ 정답입니다!';
+  } else {
+    btn.classList.add('wrong');
+    opts[ans].classList.add('reveal');
+    noSet.add(origIdx); okSet.delete(origIdx);
+    fb.className = 'feedback-box no show';
+    fb.textContent = '✗ 오답입니다. 정답: ' + letters[ans] + ' ' + q.o[ans];
+  }
+  document.getElementById('btn-next').style.display = 'block';
+  document.getElementById('cnt-ok').textContent = okSet.size;
+  document.getElementById('cnt-no').textContent = noSet.size;
+  saveState();
+}
+
+function nextQ() { qIdx++; saveState(); renderQ(); }
+
+function endEarly() { showResult(); }
+
+function showResult() {
+  clearSave();
+  document.getElementById('quiz-screen').style.display = 'none';
+  const rs = document.getElementById('result-screen');
+  rs.style.display = 'block';
+  const total = okSet.size + noSet.size;
+  const ok = okSet.size;
+  const pct = total > 0 ? Math.round(ok / total * 100) : 0;
+  document.getElementById('res-title').textContent = isRetry ? '오답 재도전 완료!' : '퀴즈 완료!';
+  document.getElementById('res-sub').textContent = '수고하셨습니다 🎉';
+  document.getElementById('r-total').textContent = total;
+  document.getElementById('r-ok').textContent = ok;
+  document.getElementById('r-no').textContent = noSet.size;
+  document.getElementById('pct-text').textContent = pct + '%';
+  const arc = 289 * (1 - pct / 100);
+  document.getElementById('ring-arc').setAttribute('stroke-dashoffset', arc.toFixed(1));
+  const btn = document.getElementById('btn-retry-wrong');
+  btn.disabled = noSet.size === 0;
+  btn.textContent = noSet.size > 0 ? '오답 ' + noSet.size + '문항 다시 풀기' : '오답 없음';
+}
+
+function retryWrong() {
+  const wrong = [...noSet].map(i => ALL[i]);
+  isRetry = true;
+  startQuiz(null, wrong);
+}
+
+function restart() {
+  clearSave();
+  document.getElementById('result-screen').style.display = 'none';
+  const ss = document.getElementById('start-screen');
+  ss.style.display = 'flex';
+  ss.style.flexDirection = 'column';
+  checkResume();
+}
+
+window.addEventListener('load', checkResume);
 </script>
 </body>
 </html>
