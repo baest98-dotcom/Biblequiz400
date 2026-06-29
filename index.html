@@ -704,13 +704,13 @@ function startQuiz(mode,custom){
   renderQ();
 }
 function renderQ(){
-  if(idx>=queue.length){showResult();return;}
+  if(qIdx>=queue.length){showResult();return;}
   answered=false;
-  const q=queue[idx];
+  const q=queue[qIdx];
   const total=queue.length;
-  const pct=Math.round(idx/total*100);
+  const pct=Math.round(qIdx/total*100);
   document.getElementById('prog').style.width=pct+'%';
-  document.getElementById('q-num').textContent=(idx+1)+' / '+total;
+  document.getElementById('q-num').textContent=(qIdx+1)+' / '+total;
   document.getElementById('cnt-ok').textContent=okSet.size;
   document.getElementById('cnt-no').textContent=noSet.size;
   const badge=document.getElementById('sec-badge');
@@ -759,7 +759,7 @@ function pick(i,ans,btn,q){
 
   saveState();
 }
-function nextQ(){idx++;renderQ();}
+function nextQ(){qIdx++;saveState();renderQ();}
 
 function endEarly(){showResult();}
 
