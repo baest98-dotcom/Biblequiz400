@@ -151,12 +151,17 @@ body{font-family:var(--font-sans)}
 .screen.active { display: flex !important; flex-direction: column; }
 #result-screen.active { display: block !important; }
 #quiz-screen.active { display: flex !important; flex-direction: column; min-height: 100vh; }
+
+#screen-main { padding: 1.5rem 1rem; gap: 1rem; }
+#screen-resume { padding: 1.5rem 1rem; gap: 1rem; }
+#quiz-screen { min-height: 100vh; }
+#result-screen { padding: 1.5rem 1rem; text-align: center; }
 </style>
 </head>
 <body>
 
 <!-- 메인 화면 -->
-<div id="screen-main" class="screen active" style="padding:1.5rem 1rem;gap:1rem">
+<div id="screen-main" class="screen active">
   <div class="logo">
     <div class="logo-icon">✝️</div>
     <h1>성경고사 문제은행</h1>
@@ -181,7 +186,7 @@ body{font-family:var(--font-sans)}
 </div>
 
 <!-- 이어서/처음부터 선택 화면 -->
-<div id="screen-resume" class="screen" style="padding:1.5rem 1rem;gap:1rem">
+<div id="screen-resume" class="screen">
   <div class="logo">
     <div class="logo-icon">✝️</div>
     <h1>순서대로 풀기</h1>
@@ -196,7 +201,7 @@ body{font-family:var(--font-sans)}
 </div>
 
 <!-- 퀴즈 화면 -->
-<div id="quiz-screen" class="screen" style="min-height:100vh">
+<div id="quiz-screen" class="screen">
   <div class="q-header">
     <div class="header-row">
       <div class="q-num" id="q-num">1 / 400</div>
@@ -220,7 +225,7 @@ body{font-family:var(--font-sans)}
 </div>
 
 <!-- 결과 화면 -->
-<div id="result-screen" class="screen" style="padding:1.5rem 1rem;text-align:center">
+<div id="result-screen" class="screen">
   <div class="result-title" id="res-title">완료!</div>
   <div class="result-sub" id="res-sub"></div>
   <div class="score-ring">
