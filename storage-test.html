@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Storage Test</title>
+<style>
+body{font-family:sans-serif;padding:20px;font-size:16px}
+button{padding:12px 20px;font-size:15px;margin:8px 0;width:100%;border-radius:8px;border:1px solid #ccc}
+.ok{background:#d4edda;color:#155724;padding:12px;border-radius:8px;margin:8px 0}
+.fail{background:#f8d7da;color:#721c24;padding:12px;border-radius:8px;margin:8px 0}
+</style>
+</head>
+<body>
+<h2>브라우저 저장소 테스트</h2>
+<button onclick="testLocal()">localStorage 테스트</button>
+<button onclick="testSession()">sessionStorage 테스트</button>
+<button onclick="testCookie()">Cookie 테스트</button>
+<div id="result"></div>
+<script>
+function show(msg, ok) {
+  document.getElementById('result').innerHTML += 
+    '<div class="'+(ok?'ok':'fail')+'">'+msg+'</div>';
+}
+function testLocal() {
+  try {
+    localStorage.setItem('test', '123');
+    const v = localStorage.getItem('test');
+    localStorage.removeItem('test');
+    show('localStorage: ' + (v==='123' ? '✓ 정상 작동' : '✗ 저장은 되나 읽기 실패'), v==='123');
+  } catch(e) {
+    show('localStorage: ✗ 오류 - ' + e.message, false);
+  }
+}
+function testSession() {
+  try {
+    sessionStorage.setItem('test', '123');
+    const v = sessionStorage.getItem('test');
+    sessionStorage.removeItem('test');
+    show('sessionStorage: ' + (v==='123' ? '✓ 정상 작동' : '✗ 저장은 되나 읽기 실패'), v==='123');
+  } catch(e) {
+    show('sessionStorage: ✗ 오류 - ' + e.message, false);
+  }
+}
+function testCookie() {
+  try {
+    document.cookie = 'test=123;path=/';
+    const ok = document.cookie.includes('test=123');
+    show('Cookie: ' + (ok ? '✓ 정상 작동' : '✗ 저장 실패'), ok);
+  } catch(e) {
+    show('Cookie: ✗ 오류 - ' + e.message, false);
+  }
+}
+</script>
+</body>
+</html>
