@@ -14,6 +14,7 @@
 <style>
 
 
+
 :root {
   --font-sans: -apple-system, BlinkMacSystemFont, 'Noto Sans KR', 'Malgun Gothic', sans-serif;
   --surface-0: #f5f5f4;
@@ -156,6 +157,25 @@ body{font-family:var(--font-sans)}
 #screen-resume { padding: 1.5rem 1rem; gap: 1rem; }
 #quiz-screen { min-height: 100vh; }
 #result-screen { padding: 1.5rem 1rem; text-align: center; }
+
+.screen { display: none; }
+.screen.active { display: flex !important; flex-direction: column; }
+#result-screen.active { display: block !important; }
+#quiz-screen.active { display: flex !important; flex-direction: column; min-height: 100vh; }
+#screen-main { padding: 1.5rem 1rem; gap: 1rem; }
+#screen-resume { padding: 1.5rem 1rem; gap: 1rem; }
+#result-screen { padding: 1.5rem 1rem; text-align: center; }
+
+/* 저장 링크 모달 */
+.modal-bg { display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:100;align-items:center;justify-content:center;padding:1rem }
+.modal-bg.open { display:flex }
+.modal { background:var(--surface-2);border-radius:14px;padding:1.25rem;width:100%;max-width:400px }
+.modal h3 { font-size:16px;font-weight:500;color:var(--text-primary);margin-bottom:8px }
+.modal p { font-size:12px;color:var(--text-secondary);margin-bottom:12px;line-height:1.5 }
+.modal-url { background:var(--surface-1);border:0.5px solid var(--border);border-radius:8px;padding:10px;font-size:11px;color:var(--text-secondary);word-break:break-all;margin-bottom:12px;max-height:80px;overflow-y:auto }
+.modal-btns { display:flex;gap:8px }
+.btn-copy { flex:1;background:var(--fill-accent);color:var(--on-accent);border:none;border-radius:8px;padding:11px;font-size:14px;font-weight:500;cursor:pointer }
+.btn-close-modal { background:var(--surface-1);border:0.5px solid var(--border);border-radius:8px;padding:11px 14px;font-size:14px;color:var(--text-secondary);cursor:pointer }
 </style>
 </head>
 <body>
@@ -167,7 +187,6 @@ body{font-family:var(--font-sans)}
     <h1>성경고사 문제은행</h1>
     <p>구약 200문항 · 신약 200문항</p>
   </div>
-  <p style="font-size:13px;color:var(--text-secondary);text-align:center">출제 방식을 선택하세요</p>
   <div class="mode-card" onclick="clickSeq()">
     <div class="mode-icon seq"><i class="ti ti-list-numbers" aria-hidden="true"></i></div>
     <div>
@@ -175,7 +194,6 @@ body{font-family:var(--font-sans)}
       <div class="mode-desc">구약 1번부터 신약 200번까지 순서대로</div>
     </div>
   </div>
-  <div class="divider">또는</div>
   <div class="mode-card" onclick="startRandom()">
     <div class="mode-icon rnd"><i class="ti ti-shuffle" aria-hidden="true"></i></div>
     <div>
@@ -183,6 +201,13 @@ body{font-family:var(--font-sans)}
       <div class="mode-desc">400문항을 무작위 순서로</div>
     </div>
   </div>
+
+  <div style="background:var(--surface-1);border:0.5px solid var(--border);border-radius:10px;padding:1rem;font-size:12px;color:var(--text-secondary);line-height:1.7;margin-top:4px">
+    💡 <b style="color:var(--text-primary)">이용 안내</b><br>
+    · 이어서 풀기 기능은 <b>크롬(Chrome) 브라우저</b>에서만 지원되며, 삼성 브라우저 등 다른 브라우저에서는 작동하지 않을 수 있습니다<br>
+    · 크롬에서 앱 설치: 주소창 옆 메뉴(⋮) → <b>홈 화면에 추가</b>
+  </div>
+  <div style="text-align:right;font-size:11px;color:var(--text-muted);padding:4px 2px">baest98</div>
 </div>
 
 <!-- 이어서/처음부터 선택 화면 -->
@@ -247,6 +272,19 @@ body{font-family:var(--font-sans)}
   <div class="result-btns">
     <button class="btn-retry-wrong" id="btn-retry-wrong" onclick="retryWrong()">오답만 다시 풀기</button>
     <button class="btn-restart" onclick="goMain()">처음으로 돌아가기</button>
+  </div>
+</div>
+
+<!-- 진행 저장 모달 -->
+<div class="modal-bg" id="save-modal">
+  <div class="modal">
+    <h3>📌 진행 저장</h3>
+    <p>아래 링크를 복사해서 북마크하거나 메모장에 저장해두세요.<br>나중에 이 링크로 접속하면 이어서 풀 수 있어요.</p>
+    <div class="modal-url" id="save-url"></div>
+    <div class="modal-btns">
+      <button class="btn-copy" onclick="copyUrl()">링크 복사</button>
+      <button class="btn-close-modal" onclick="closeModal()">닫기</button>
+    </div>
   </div>
 </div>
 
@@ -667,70 +705,85 @@ const ALL=[...OT.map((q,i)=>({...q,sec:'OT',num:i+1})),...NT.map((q,i)=>({...q,s
 
 // 전역 상태
 let queue=[], qIdx=0, okSet=new Set(), noSet=new Set(), answered=false, isRetry=false, isSeq=false;
-const SAVE_KEY='bqSeqSave';
+const SAVE_KEY = 'bqSeqSave';
 
-// 화면 전환 - CSS class 방식
+// localStorage + sessionStorage 저장 (크롬용)
+function saveLocal() {
+  try {
+    const data = JSON.stringify({ qIdx, okArr:[...okSet], noArr:[...noSet] });
+    localStorage.setItem(SAVE_KEY, data);
+    sessionStorage.setItem(SAVE_KEY, data);
+  } catch(e) {}
+}
+function clearLocal() {
+  try { localStorage.removeItem(SAVE_KEY); sessionStorage.removeItem(SAVE_KEY); } catch(e) {}
+}
+function loadLocal() {
+  try {
+    const raw = localStorage.getItem(SAVE_KEY) || sessionStorage.getItem(SAVE_KEY);
+    const s = JSON.parse(raw);
+    return (s && s.qIdx !== undefined) ? s : null;
+  } catch(e) { return null; }
+}
+
+// URL 파라미터 저장/불러오기
+function saveToUrl() {
+  const ok = [...okSet].join(',');
+  const no = [...noSet].join(',');
+  const params = new URLSearchParams();
+  params.set('q', qIdx);
+  if (ok) params.set('ok', ok);
+  if (no) params.set('no', no);
+  const url = location.origin + location.pathname + '?' + params.toString();
+  document.getElementById('save-url').textContent = url;
+  document.getElementById('save-modal').classList.add('open');
+}
+
+function loadFromUrl() {
+  const params = new URLSearchParams(location.search);
+  const q = params.get('q');
+  if (q === null) return null;
+  const ok = params.get('ok') ? params.get('ok').split(',').map(Number) : [];
+  const no = params.get('no') ? params.get('no').split(',').map(Number) : [];
+  return { qIdx: parseInt(q), okArr: ok, noArr: no };
+}
+
+function copyUrl() {
+  const url = document.getElementById('save-url').textContent;
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(url).then(() => {
+      document.querySelector('.btn-copy').textContent = '복사됨 ✓';
+      setTimeout(() => document.querySelector('.btn-copy').textContent = '링크 복사', 2000);
+    });
+  } else {
+    // 폴백: textarea로 복사
+    const ta = document.createElement('textarea');
+    ta.value = url;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    document.querySelector('.btn-copy').textContent = '복사됨 ✓';
+    setTimeout(() => document.querySelector('.btn-copy').textContent = '링크 복사', 2000);
+  }
+}
+
+function closeModal() {
+  document.getElementById('save-modal').classList.remove('open');
+}
+
+// 화면 전환
 const SCREENS = ['screen-main','screen-resume','quiz-screen','result-screen'];
 function showScreen(id) {
   SCREENS.forEach(sid => document.getElementById(sid).classList.remove('active'));
   document.getElementById(id).classList.add('active');
 }
 
-// 저장/불러오기
-// localStorage 가용 여부 확인
-function storageAvailable() {
-  try {
-    const t = '__test__';
-    localStorage.setItem(t, t);
-    localStorage.removeItem(t);
-    return true;
-  } catch(e) { return false; }
-}
-
-// 인메모리 폴백 (localStorage 불가 시)
-let _memSave = null;
-
-function saveSeq() {
-  const data = JSON.stringify({
-    qIdx: qIdx,
-    okArr: [...okSet],
-    noArr: [...noSet]
-  });
-  try {
-    localStorage.setItem(SAVE_KEY, data);
-  } catch(e) {}
-  try {
-    sessionStorage.setItem(SAVE_KEY, data);
-  } catch(e) {}
-  _memSave = data;
-}
-
-function clearSeq() {
-  try { localStorage.removeItem(SAVE_KEY); } catch(e) {}
-  try { sessionStorage.removeItem(SAVE_KEY); } catch(e) {}
-  _memSave = null;
-}
-
-function loadSeq() {
-  let raw = null;
-  try { raw = localStorage.getItem(SAVE_KEY); } catch(e) {}
-  if (!raw) { try { raw = sessionStorage.getItem(SAVE_KEY); } catch(e) {} }
-  if (!raw) { raw = _memSave; }
-  try {
-    const s = JSON.parse(raw);
-    if (!s || s.qIdx === undefined) return null;
-    return s;
-  } catch(e) { return null; }
-}
-
-// 메인으로
-function goMain() {
-  showScreen('screen-main');
-}
+function goMain() { showScreen('screen-main'); }
 
 // 순서대로 버튼 클릭
 function clickSeq() {
-  const s = loadSeq();
+  const s = loadLocal() || loadFromUrl();
   if (s && s.qIdx > 0 && s.qIdx < ALL.length) {
     document.getElementById('resume-info').textContent =
       s.qIdx + '번 문제까지 풀었습니다 (정답 ' + s.okArr.length + '개 / 오답 ' + s.noArr.length + '개)';
@@ -740,32 +793,30 @@ function clickSeq() {
   }
 }
 
-// 순서대로 처음부터
 function startSeq() {
-  clearSeq();
+  clearLocal();
   queue=[...ALL]; qIdx=0; okSet=new Set(); noSet=new Set(); answered=false; isRetry=false; isSeq=true;
   showScreen('quiz-screen');
   renderQ();
 }
 
-// 이어서 풀기
 function doResume() {
-  const s = loadSeq();
+  const s = loadLocal() || loadFromUrl();
   if (!s) { startSeq(); return; }
   queue=[...ALL]; qIdx=s.qIdx; okSet=new Set(s.okArr); noSet=new Set(s.noArr);
   answered=false; isRetry=false; isSeq=true;
+  // URL 파라미터 제거
+  history.replaceState(null, '', location.pathname);
   showScreen('quiz-screen');
   renderQ();
 }
 
-// 무작위
 function startRandom() {
   queue=shuffle([...ALL]); qIdx=0; okSet=new Set(); noSet=new Set(); answered=false; isRetry=false; isSeq=false;
   showScreen('quiz-screen');
   renderQ();
 }
 
-// 문제 렌더링
 function renderQ() {
   if (qIdx >= queue.length) { showResult(); return; }
   answered = false;
@@ -794,7 +845,6 @@ function renderQ() {
   document.getElementById('q-body').scrollTop=0;
 }
 
-// 답 선택
 function pick(i, ans, btn, q) {
   if (answered) return;
   answered=true;
@@ -816,22 +866,22 @@ function pick(i, ans, btn, q) {
   document.getElementById('btn-next').style.display='block';
   document.getElementById('cnt-ok').textContent=okSet.size;
   document.getElementById('cnt-no').textContent=noSet.size;
-  if (isSeq) saveSeq();
+  if (isSeq) saveLocal();
 }
 
-// 다음 문제
 function nextQ() {
   qIdx++;
-  if (isSeq) saveSeq();
+  if (isSeq) saveLocal();
   renderQ();
 }
 
-// 종료
-function endEarly() { showResult(); }
+function endEarly() {
+  if (isSeq && qIdx > 0) saveToUrl();
+  else showResult();
+}
 
-// 결과
 function showResult() {
-  if (!isRetry) clearSeq();
+  if (!isRetry) clearLocal();
   showScreen('result-screen');
   const total=okSet.size+noSet.size, ok=okSet.size;
   const pct=total>0?Math.round(ok/total*100):0;
@@ -847,13 +897,22 @@ function showResult() {
   btn.textContent=noSet.size>0?'오답 '+noSet.size+'문항 다시 풀기':'오답 없음';
 }
 
-// 오답 재도전
 function retryWrong() {
   queue=[...noSet].map(i=>ALL[i]);
   qIdx=0; answered=false; isRetry=true; isSeq=false;
   showScreen('quiz-screen');
   renderQ();
 }
+
+// 페이지 로드 시 URL 파라미터 확인
+window.addEventListener('load', () => {
+  const s = loadFromUrl();
+  if (s && s.qIdx > 0) {
+    document.getElementById('resume-info').textContent =
+      s.qIdx + '번 문제까지 풀었습니다 (정답 ' + s.okArr.length + '개 / 오답 ' + s.noArr.length + '개)';
+    showScreen('screen-resume');
+  }
+});
 </script>
 </body>
 </html>
