@@ -95,6 +95,25 @@ body{font-family:var(--font-sans)}
 .q-counts{display:flex;gap:8px;font-size:12px;color:var(--text-secondary)}
 .cnt-ok{color:var(--text-success)}
 .cnt-no{color:var(--text-danger)}
+.streak-text{
+  margin-left:8px;
+  font-size:12px;
+  font-weight:700;
+  color:#ff5a28;
+  white-space:nowrap;
+}
+.progress-fill.streak-fire{
+  background:linear-gradient(90deg,#ff7e29,#ff4d4d) !important;
+}
+.streak-fire-icon{
+  position:absolute;
+  top:50%;
+  font-size:14px;
+  transform:translate(-50%,-65%);
+  pointer-events:none;
+  transition:left 0.3s ease;
+  filter:drop-shadow(0 1px 2px rgba(0,0,0,0.2));
+}
 .q-num{font-size:12px;color:var(--text-muted)}
 .q-body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:1rem;}
 .sec-badge{display:inline-block;font-size:11px;padding:2px 8px;border-radius:10px;margin-bottom:8px;font-weight:500}
@@ -259,13 +278,16 @@ body{font-family:var(--font-sans)}
 <div id="quiz-screen" class="screen">
   <div class="q-header">
     <div class="header-row">
-      <div class="q-num" id="q-num">1 / 400</div>
+      <div class="q-num" id="q-num">1 / 400</div><span class="streak-text" id="streak-toast" style="display:none"><span id="streak-toast-count">0</span>연속!</span>
       <div class="q-counts">
         <span class="cnt-ok">✓ <b id="cnt-ok">0</b></span>
         <span class="cnt-no">✗ <b id="cnt-no">0</b></span>
       </div>
     </div>
-    <div class="progress-bar"><div class="progress-fill" id="prog" style="width:0%"></div></div>
+    <div class="progress-wrap" style="position:relative">
+      <div class="progress-bar"><div class="progress-fill" id="prog" style="width:0%"></div></div>
+      <span class="streak-fire-icon" id="streak-fire-icon" style="display:none">🔥</span>
+    </div>
   </div>
   <div class="q-body" id="q-body">
     <span class="sec-badge" id="sec-badge">OT</span>
@@ -299,6 +321,9 @@ body{font-family:var(--font-sans)}
     <div class="stat-card"><div class="stat-n n-total" id="r-total">0</div><div class="stat-l">총 문항</div></div>
     <div class="stat-card"><div class="stat-n n-ok" id="r-ok">0</div><div class="stat-l">정답</div></div>
     <div class="stat-card"><div class="stat-n n-no" id="r-no">0</div><div class="stat-l">오답</div></div>
+  </div>
+  <div id="r-streak-wrap" style="margin-top:10px;font-size:13px;color:var(--text-secondary);display:none">
+    🔥 최고 연속 정답: <b id="r-streak">0</b>개
   </div>
   <div class="result-btns">
     <button class="btn-retry-wrong" id="btn-retry-wrong" onclick="retryWrong()">오답만 다시 풀기</button>
@@ -733,7 +758,7 @@ const NT=[
 const ALL=[...OT.map((q,i)=>({...q,sec:'OT',num:i+1})),...NT.map((q,i)=>({...q,sec:'NT',num:i+1}))];
 
 // 전역 상태
-let queue=[], qIdx=0, okSet=new Set(), noSet=new Set(), answered=false, isRetry=false, isSeq=false, seqMode='';
+let queue=[], qIdx=0, okSet=new Set(), noSet=new Set(), answered=false, isRetry=false, isSeq=false, seqMode='', streak=0, bestStreak=0;
 let OT_ARR=[], NT_ARR=[];
 window.addEventListener('load', () => {
   OT_ARR = ALL.filter(q => q.sec==='OT');
@@ -810,7 +835,7 @@ function startWrongNote() {
   try { localStorage.removeItem(WRONG_PROGRESS_KEY); sessionStorage.removeItem(WRONG_PROGRESS_KEY); } catch(e) {}
   const wrongSet = loadWrongSet();
   queue = [...wrongSet].map(i => ALL[i]);
-  qIdx=0; okSet=new Set(); noSet=new Set(); answered=false; isRetry=true; isSeq=false;
+  qIdx=0; okSet=new Set(); noSet=new Set(); answered=false; isRetry=true; isSeq=false; streak=0;
   currentRetryIsWrongNote = true;
   showScreen('quiz-screen');
   renderQ();
@@ -821,7 +846,7 @@ function doResumeWrongNote() {
   if (!s || !s.queueIds) { startWrongNote(); return; }
   queue = s.queueIds.map(i => ALL[i]);
   qIdx=s.qIdx; okSet=new Set(s.okArr); noSet=new Set(s.noArr);
-  answered=false; isRetry=true; isSeq=false;
+  answered=false; isRetry=true; isSeq=false; streak=0;
   currentRetryIsWrongNote = true;
   history.replaceState(null, '', location.pathname);
   showScreen('quiz-screen');
@@ -924,6 +949,32 @@ function closeModal() {
 }
 
 // 화면 전환
+function showStreakToast() {
+  const textEl = document.getElementById('streak-toast');
+  const countEl = document.getElementById('streak-toast-count');
+  const prog = document.getElementById('prog');
+  const fireIcon = document.getElementById('streak-fire-icon');
+  if (!textEl || !countEl) return;
+  if (streak >= 3) {
+    countEl.textContent = streak;
+    textEl.style.display = 'inline';
+    if (prog) prog.classList.add('streak-fire');
+    if (fireIcon && prog) {
+      fireIcon.style.display = 'inline';
+      fireIcon.style.left = prog.style.width;
+    }
+  } else {
+    textEl.style.display = 'none';
+    if (prog) prog.classList.remove('streak-fire');
+    if (fireIcon) fireIcon.style.display = 'none';
+  }
+}
+
+function updateStreakBadge() {
+  // 새 문제로 넘어가도 스트릭이 3 이상이면 토스트 유지, 아니면 숨김
+  showStreakToast();
+}
+
 const SCREENS = ['screen-main','screen-resume','screen-resume-rnd','quiz-screen','result-screen'];
 function showScreen(id) {
   SCREENS.forEach(sid => document.getElementById(sid).classList.remove('active'));
@@ -951,7 +1002,7 @@ function clickSeq(mode) {
 function startSeq() {
   clearLocalSeq();
   queue = seqMode==='nt' ? NT_ARR : OT_ARR;
-  qIdx=0; okSet=new Set(); noSet=new Set(); answered=false; isRetry=false; isSeq=true;
+  qIdx=0; okSet=new Set(); noSet=new Set(); answered=false; isRetry=false; isSeq=true; streak=0;
   showScreen('quiz-screen');
   renderQ();
 }
@@ -961,7 +1012,7 @@ function doResume() {
   if (!s) { startSeq(); return; }
   queue = seqMode==='nt' ? NT_ARR : OT_ARR;
   qIdx=s.qIdx; okSet=new Set(s.okArr); noSet=new Set(s.noArr);
-  answered=false; isRetry=false; isSeq=true;
+  answered=false; isRetry=false; isSeq=true; streak=0;
   history.replaceState(null, '', location.pathname);
   showScreen('quiz-screen');
   renderQ();
@@ -983,7 +1034,7 @@ function clickRandom() {
 
 function startRandom() {
   clearLocalRnd();
-  queue=shuffle([...ALL]); qIdx=0; okSet=new Set(); noSet=new Set(); answered=false; isRetry=false; isSeq=false;
+  queue=shuffle([...ALL]); qIdx=0; okSet=new Set(); noSet=new Set(); answered=false; isRetry=false; isSeq=false; streak=0;
   saveLocal(); // 시작 즉시 순서 저장
   showScreen('quiz-screen');
   renderQ();
@@ -994,7 +1045,7 @@ function doResumeRnd() {
   if (!s || !s.queueIds) { startRandom(); return; }
   queue = s.queueIds.map(i => ALL[i]);
   qIdx=s.qIdx; okSet=new Set(s.okArr); noSet=new Set(s.noArr);
-  answered=false; isRetry=false; isSeq=false;
+  answered=false; isRetry=false; isSeq=false; streak=0;
   history.replaceState(null, '', location.pathname);
   showScreen('quiz-screen');
   renderQ();
@@ -1005,7 +1056,8 @@ function renderQ() {
   answered = false;
   const curQ = queue[qIdx];
   const total = queue.length;
-  document.getElementById('prog').style.width = Math.round(qIdx/total*100)+'%';
+  document.getElementById('prog').style.width = (qIdx/total*100).toFixed(2)+'%';
+  updateStreakBadge();
   document.getElementById('q-num').textContent = (qIdx+1)+' / '+total;
   document.getElementById('cnt-ok').textContent = okSet.size;
   document.getElementById('cnt-no').textContent = noSet.size;
@@ -1041,13 +1093,17 @@ function pick(i, ans, btn, q) {
     okSet.add(origIdx); noSet.delete(origIdx);
     fb.className='feedback-box ok show';
     fb.textContent='✓ 정답입니다!';
+    streak++;
+    if (streak > bestStreak) bestStreak = streak;
   } else {
     btn.classList.add('wrong');
     document.querySelectorAll('.opt-btn')[ans].classList.add('reveal');
     noSet.add(origIdx); okSet.delete(origIdx);
     fb.className='feedback-box no show';
     fb.textContent='✗ 오답입니다.';
+    streak = 0;
   }
+  showStreakToast();
   document.getElementById('btn-next').style.display='block';
   document.getElementById('cnt-ok').textContent=okSet.size;
   document.getElementById('cnt-no').textContent=noSet.size;
@@ -1087,6 +1143,14 @@ function showResult() {
   document.getElementById('r-ok').textContent=ok;
   document.getElementById('r-no').textContent=noSet.size;
   document.getElementById('pct-text').textContent=pct+'%';
+  const streakWrap = document.getElementById('r-streak-wrap');
+  if (bestStreak >= 3) {
+    document.getElementById('r-streak').textContent = bestStreak;
+    streakWrap.style.display = 'block';
+  } else {
+    streakWrap.style.display = 'none';
+  }
+  bestStreak = 0;
   document.getElementById('ring-arc').setAttribute('stroke-dashoffset',(289*(1-pct/100)).toFixed(1));
   const btn=document.getElementById('btn-retry-wrong');
   if (wasWrongNote) {
@@ -1101,7 +1165,7 @@ function showResult() {
 
 function retryWrong() {
   queue=[...noSet].map(i=>ALL[i]);
-  qIdx=0; answered=false; isRetry=true; isSeq=false;
+  qIdx=0; answered=false; isRetry=true; isSeq=false; streak=0;
   currentRetryIsWrongNote = false; // 이번 세션 오답만 푸는 것이라 통합 오답노트와 별개
   showScreen('quiz-screen');
   renderQ();
