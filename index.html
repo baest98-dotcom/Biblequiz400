@@ -80,7 +80,7 @@ body{font-family:var(--font-sans)}
 .mode-card{background:var(--surface-1);border:0.5px solid var(--border);border-radius:12px;padding:1rem 1.25rem;display:flex;align-items:center;gap:12px;cursor:pointer;transition:background 0.15s,border-color 0.15s;-webkit-tap-highlight-color:transparent}
 .mode-card:active{background:var(--surface-0);border-color:var(--border-strong)}
 .mode-icon{width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
-.mode-icon.seq{background:#e8f5e9;color:#2e7d32}.mode-icon.nt{background:var(--bg-accent)}
+.mode-icon.seq{background:#e8f5e9;color:#2e7d32}.mode-icon.nt{background:var(--bg-accent)}.mode-icon.wrong{background:transparent}
 .mode-icon.rnd{background:var(--bg-warning)}
 .mode-label{font-size:15px;font-weight:500;color:var(--text-primary);margin-bottom:2px}
 .mode-desc{font-size:12px;color:var(--text-secondary)}
@@ -206,6 +206,13 @@ body{font-family:var(--font-sans)}
     <div>
       <div class="mode-label">무작위로 풀기</div>
       <div class="mode-desc">400문항을 무작위 순서로</div>
+    </div>
+  </div>
+  <div class="mode-card" id="wrongnote-card" onclick="clickWrongNote()" style="display:none">
+    <div class="mode-icon wrong" style="font-size:38px;line-height:1;transform:translateY(-3px)">📝</div>
+    <div>
+      <div class="mode-label">오답 노트</div>
+      <div class="mode-desc" id="wrongnote-desc">모아둔 오답 문항을 다시 풀어보세요</div>
     </div>
   </div>
 
@@ -737,6 +744,106 @@ window.addEventListener('load', () => {
 const SAVE_KEY_OT = 'bqOTSave';
 const SAVE_KEY_NT = 'bqNTSave';
 const SAVE_KEY_RND = 'bqRndSave';
+const WRONG_NOTE_KEY = 'bqWrongNote';
+const WRONG_PROGRESS_KEY = 'bqWrongProgress';
+
+// 통합 오답 노트 관리
+function loadWrongSet() {
+  try {
+    const raw = localStorage.getItem(WRONG_NOTE_KEY);
+    const arr = JSON.parse(raw);
+    return Array.isArray(arr) ? new Set(arr) : new Set();
+  } catch(e) { return new Set(); }
+}
+
+function saveWrongSet(set) {
+  try {
+    localStorage.setItem(WRONG_NOTE_KEY, JSON.stringify([...set]));
+  } catch(e) {}
+}
+
+// 문제를 풀 때마다 호출: 정답이면 오답노트에서 제거, 오답이면 추가
+function syncWrongNote(origIdx, isCorrect) {
+  const wrongSet = loadWrongSet();
+  if (isCorrect) {
+    wrongSet.delete(origIdx);
+  } else {
+    wrongSet.add(origIdx);
+  }
+  saveWrongSet(wrongSet);
+  updateWrongNoteBanner();
+}
+
+function updateWrongNoteBanner() {
+  const wrongSet = loadWrongSet();
+  const card = document.getElementById('wrongnote-card');
+  const desc = document.getElementById('wrongnote-desc');
+  if (!card) return;
+  if (wrongSet.size > 0) {
+    card.style.display = 'flex';
+    desc.textContent = '모아둔 오답 ' + wrongSet.size + '문항을 다시 풀어보세요';
+  } else {
+    card.style.display = 'none';
+  }
+}
+
+let currentRetryIsWrongNote = false;
+
+function clickWrongNote() {
+  const wrongSet = loadWrongSet();
+  if (wrongSet.size === 0) return;
+  // 오답노트 진행 상태 확인
+  const s = loadLocal('wrongnote');
+  if (s && s.qIdx > 0 && s.queueIds && s.queueIds.length > 0 && s.qIdx < s.queueIds.length) {
+    document.getElementById('screen-resume-rnd').querySelector('h1').textContent = '오답 노트';
+    document.querySelector('#screen-resume-rnd button:nth-of-type(1)').setAttribute('onclick', 'doResumeWrongNote()');
+    document.querySelector('#screen-resume-rnd button:nth-of-type(2)').setAttribute('onclick', 'startWrongNote()');
+    document.getElementById('resume-info-rnd').textContent =
+      s.qIdx + '번 문제까지 풀었습니다 (정답 ' + s.okArr.length + '개 / 오답 ' + s.noArr.length + '개)';
+    showScreen('screen-resume-rnd');
+  } else {
+    startWrongNote();
+  }
+}
+
+function startWrongNote() {
+  try { localStorage.removeItem(WRONG_PROGRESS_KEY); sessionStorage.removeItem(WRONG_PROGRESS_KEY); } catch(e) {}
+  const wrongSet = loadWrongSet();
+  queue = [...wrongSet].map(i => ALL[i]);
+  qIdx=0; okSet=new Set(); noSet=new Set(); answered=false; isRetry=true; isSeq=false;
+  currentRetryIsWrongNote = true;
+  showScreen('quiz-screen');
+  renderQ();
+}
+
+function doResumeWrongNote() {
+  const s = loadLocal('wrongnote');
+  if (!s || !s.queueIds) { startWrongNote(); return; }
+  queue = s.queueIds.map(i => ALL[i]);
+  qIdx=s.qIdx; okSet=new Set(s.okArr); noSet=new Set(s.noArr);
+  answered=false; isRetry=true; isSeq=false;
+  currentRetryIsWrongNote = true;
+  history.replaceState(null, '', location.pathname);
+  showScreen('quiz-screen');
+  renderQ();
+}
+
+function saveWrongProgress() {
+  try {
+    const data = JSON.stringify({
+      qIdx: qIdx,
+      okArr: [...okSet],
+      noArr: [...noSet],
+      queueIds: queue.map(q => ALL.indexOf(q))
+    });
+    localStorage.setItem(WRONG_PROGRESS_KEY, data);
+    sessionStorage.setItem(WRONG_PROGRESS_KEY, data);
+  } catch(e) {}
+}
+
+function clearWrongProgress() {
+  try { localStorage.removeItem(WRONG_PROGRESS_KEY); sessionStorage.removeItem(WRONG_PROGRESS_KEY); } catch(e) {}
+}
 
 function saveLocal() {
   if (isRetry) return;
@@ -762,7 +869,7 @@ function clearLocalRnd() {
   try { localStorage.removeItem(SAVE_KEY_RND); sessionStorage.removeItem(SAVE_KEY_RND); } catch(e) {}
 }
 function loadLocal(mode) {
-  const key = mode==='rnd' ? SAVE_KEY_RND : mode==='nt' ? SAVE_KEY_NT : SAVE_KEY_OT;
+  const key = mode==='rnd' ? SAVE_KEY_RND : mode==='wrongnote' ? WRONG_PROGRESS_KEY : mode==='nt' ? SAVE_KEY_NT : SAVE_KEY_OT;
   try {
     const raw = localStorage.getItem(key) || sessionStorage.getItem(key);
     const s = JSON.parse(raw);
@@ -823,7 +930,7 @@ function showScreen(id) {
   document.getElementById(id).classList.add('active');
 }
 
-function goMain() { showScreen('screen-main'); }
+function goMain() { currentRetryIsWrongNote = false; updateWrongNoteBanner(); showScreen('screen-main'); }
 
 // 순서대로 버튼 클릭
 function clickSeq(mode) {
@@ -863,6 +970,9 @@ function doResume() {
 function clickRandom() {
   const s = loadLocal('rnd');
   if (s && s.queueIds && s.queueIds.length > 0 && s.qIdx >= 0) {
+    document.getElementById('screen-resume-rnd').querySelector('h1').textContent = '무작위로 풀기';
+    document.querySelector('#screen-resume-rnd button:nth-of-type(1)').setAttribute('onclick', 'doResumeRnd()');
+    document.querySelector('#screen-resume-rnd button:nth-of-type(2)').setAttribute('onclick', 'startRandom()');
     document.getElementById('resume-info-rnd').textContent =
       s.qIdx + '번 문제까지 풀었습니다 (정답 ' + s.okArr.length + '개 / 오답 ' + s.noArr.length + '개)';
     showScreen('screen-resume-rnd');
@@ -923,9 +1033,10 @@ function pick(i, ans, btn, q) {
   if (answered) return;
   answered=true;
   const origIdx=ALL.indexOf(q);
+  const isCorrect = (i===ans);
   document.querySelectorAll('.opt-btn').forEach(b=>b.disabled=true);
   const fb=document.getElementById('feedback');
-  if (i===ans) {
+  if (isCorrect) {
     btn.classList.add('correct');
     okSet.add(origIdx); noSet.delete(origIdx);
     fb.className='feedback-box ok show';
@@ -941,6 +1052,11 @@ function pick(i, ans, btn, q) {
   document.getElementById('cnt-ok').textContent=okSet.size;
   document.getElementById('cnt-no').textContent=noSet.size;
   if (!isRetry) saveLocal();
+  if (currentRetryIsWrongNote) saveWrongProgress();
+  // 오답노트 동기화: 오답노트 자체를 풀 때는 통합 오답노트도 갱신
+  if (!isRetry || currentRetryIsWrongNote) {
+    syncWrongNote(origIdx, isCorrect);
+  }
   const expBox = document.getElementById('explanation');
   if (q.e) { expBox.textContent = q.e; expBox.style.display = 'block'; }
   else { expBox.style.display = 'none'; }
@@ -949,6 +1065,7 @@ function pick(i, ans, btn, q) {
 function nextQ() {
   qIdx++;
   if (!isRetry) saveLocal();
+  if (currentRetryIsWrongNote) saveWrongProgress();
   renderQ();
 }
 
@@ -957,7 +1074,10 @@ function endEarly() {
 }
 
 function showResult() {
+  const wasWrongNote = currentRetryIsWrongNote;
   if (!isRetry) { if(isSeq) clearLocalSeq(); else clearLocalRnd(); }
+  if (currentRetryIsWrongNote) { clearWrongProgress(); currentRetryIsWrongNote = false; }
+  updateWrongNoteBanner();
   showScreen('result-screen');
   const total=okSet.size+noSet.size, ok=okSet.size;
   const pct=total>0?Math.round(ok/total*100):0;
@@ -969,19 +1089,27 @@ function showResult() {
   document.getElementById('pct-text').textContent=pct+'%';
   document.getElementById('ring-arc').setAttribute('stroke-dashoffset',(289*(1-pct/100)).toFixed(1));
   const btn=document.getElementById('btn-retry-wrong');
-  btn.disabled=noSet.size===0;
-  btn.textContent=noSet.size>0?'오답 '+noSet.size+'문항 다시 풀기':'오답 없음';
+  if (wasWrongNote) {
+    // 오답노트 자체를 풀 때는 '오답 다시 풀기' 버튼 숨김
+    btn.style.display = 'none';
+  } else {
+    btn.style.display = '';
+    btn.disabled=noSet.size===0;
+    btn.textContent=noSet.size>0?'오답 '+noSet.size+'문항 다시 풀기':'오답 없음';
+  }
 }
 
 function retryWrong() {
   queue=[...noSet].map(i=>ALL[i]);
   qIdx=0; answered=false; isRetry=true; isSeq=false;
+  currentRetryIsWrongNote = false; // 이번 세션 오답만 푸는 것이라 통합 오답노트와 별개
   showScreen('quiz-screen');
   renderQ();
 }
 
 // 페이지 로드 시 URL 파라미터 확인
 window.addEventListener('load', () => {
+  updateWrongNoteBanner();
   const s = loadFromUrl();
   if (s && s.qIdx > 0) {
     document.getElementById('resume-info').textContent =
