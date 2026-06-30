@@ -187,11 +187,18 @@ body{font-family:var(--font-sans)}
     <h1>성경고사 문제은행</h1>
     <p>구약 200문항 · 신약 200문항</p>
   </div>
-  <div class="mode-card" onclick="clickSeq()">
+  <div class="mode-card" onclick="clickSeq('ot')">
     <div class="mode-icon seq"><i class="ti ti-list-numbers" aria-hidden="true"></i></div>
     <div>
-      <div class="mode-label">순서대로 풀기</div>
-      <div class="mode-desc">구약 1번부터 신약 200번까지 순서대로</div>
+      <div class="mode-label">구약 순서대로 풀기</div>
+      <div class="mode-desc">구약 1번부터 200번까지 순서대로</div>
+    </div>
+  </div>
+  <div class="mode-card" onclick="clickSeq('nt')">
+    <div class="mode-icon seq"><i class="ti ti-list-numbers" aria-hidden="true"></i></div>
+    <div>
+      <div class="mode-label">신약 순서대로 풀기</div>
+      <div class="mode-desc">신약 1번부터 200번까지 순서대로</div>
     </div>
   </div>
   <div class="mode-card" onclick="clickRandom()">
@@ -214,7 +221,7 @@ body{font-family:var(--font-sans)}
 <div id="screen-resume" class="screen">
   <div class="logo">
     <div class="logo-icon">✝️</div>
-    <h1>순서대로 풀기</h1>
+    <h1 id="resume-seq-title">순서대로 풀기</h1>
   </div>
   <div style="background:var(--bg-accent);border:0.5px solid var(--border-accent);border-radius:12px;padding:1rem 1.25rem">
     <div style="font-size:14px;font-weight:500;color:var(--text-accent);margin-bottom:6px">이전 기록이 있습니다</div>
@@ -719,10 +726,16 @@ const NT=[
 const ALL=[...OT.map((q,i)=>({...q,sec:'OT',num:i+1})),...NT.map((q,i)=>({...q,sec:'NT',num:i+1}))];
 
 // 전역 상태
-let queue=[], qIdx=0, okSet=new Set(), noSet=new Set(), answered=false, isRetry=false, isSeq=false;
+let queue=[], qIdx=0, okSet=new Set(), noSet=new Set(), answered=false, isRetry=false, isSeq=false, seqMode='';
+let OT_ARR=[], NT_ARR=[];
+window.addEventListener('load', () => {
+  OT_ARR = ALL.filter(q => q.sec==='OT');
+  NT_ARR = ALL.filter(q => q.sec==='NT');
+});
 
 // localStorage + sessionStorage 저장 (크롬용)
-const SAVE_KEY_SEQ = 'bqSeqSave';
+const SAVE_KEY_OT = 'bqOTSave';
+const SAVE_KEY_NT = 'bqNTSave';
 const SAVE_KEY_RND = 'bqRndSave';
 
 function saveLocal() {
@@ -734,19 +747,22 @@ function saveLocal() {
       noArr: [...noSet],
       queueIds: isSeq ? null : queue.map(q => ALL.indexOf(q))
     });
-    const key = isSeq ? SAVE_KEY_SEQ : SAVE_KEY_RND;
+    const key = isSeq ? (seqMode==='nt' ? SAVE_KEY_NT : SAVE_KEY_OT) : SAVE_KEY_RND;
     localStorage.setItem(key, data);
     sessionStorage.setItem(key, data);
   } catch(e) {}
 }
 function clearLocalSeq() {
-  try { localStorage.removeItem(SAVE_KEY_SEQ); sessionStorage.removeItem(SAVE_KEY_SEQ); } catch(e) {}
+  try {
+    const key = seqMode==='nt' ? SAVE_KEY_NT : SAVE_KEY_OT;
+    localStorage.removeItem(key); sessionStorage.removeItem(key);
+  } catch(e) {}
 }
 function clearLocalRnd() {
   try { localStorage.removeItem(SAVE_KEY_RND); sessionStorage.removeItem(SAVE_KEY_RND); } catch(e) {}
 }
 function loadLocal(mode) {
-  const key = (mode === 'rnd') ? SAVE_KEY_RND : SAVE_KEY_SEQ;
+  const key = mode==='rnd' ? SAVE_KEY_RND : mode==='nt' ? SAVE_KEY_NT : SAVE_KEY_OT;
   try {
     const raw = localStorage.getItem(key) || sessionStorage.getItem(key);
     const s = JSON.parse(raw);
@@ -810,9 +826,13 @@ function showScreen(id) {
 function goMain() { showScreen('screen-main'); }
 
 // 순서대로 버튼 클릭
-function clickSeq() {
-  const s = loadLocal('seq') || loadFromUrl();
-  if (s && s.qIdx > 0 && s.qIdx < ALL.length) {
+function clickSeq(mode) {
+  seqMode = mode || 'ot';
+  const seqLen = seqMode==='nt' ? NT_ARR.length : OT_ARR.length;
+  const s = loadLocal(seqMode) || loadFromUrl();
+  if (s && s.qIdx > 0 && s.qIdx < seqLen) {
+    const title = seqMode==='nt' ? '신약 순서대로 풀기' : '구약 순서대로 풀기';
+    document.getElementById('resume-seq-title').textContent = title;
     document.getElementById('resume-info').textContent =
       s.qIdx + '번 문제까지 풀었습니다 (정답 ' + s.okArr.length + '개 / 오답 ' + s.noArr.length + '개)';
     showScreen('screen-resume');
@@ -823,17 +843,18 @@ function clickSeq() {
 
 function startSeq() {
   clearLocalSeq();
-  queue=[...ALL]; qIdx=0; okSet=new Set(); noSet=new Set(); answered=false; isRetry=false; isSeq=true;
+  queue = seqMode==='nt' ? NT_ARR : OT_ARR;
+  qIdx=0; okSet=new Set(); noSet=new Set(); answered=false; isRetry=false; isSeq=true;
   showScreen('quiz-screen');
   renderQ();
 }
 
 function doResume() {
-  const s = loadLocal('seq') || loadFromUrl();
+  const s = loadLocal(seqMode) || loadFromUrl();
   if (!s) { startSeq(); return; }
-  queue=[...ALL]; qIdx=s.qIdx; okSet=new Set(s.okArr); noSet=new Set(s.noArr);
+  queue = seqMode==='nt' ? NT_ARR : OT_ARR;
+  qIdx=s.qIdx; okSet=new Set(s.okArr); noSet=new Set(s.noArr);
   answered=false; isRetry=false; isSeq=true;
-  // URL 파라미터 제거
   history.replaceState(null, '', location.pathname);
   showScreen('quiz-screen');
   renderQ();
