@@ -80,7 +80,7 @@ body{font-family:var(--font-sans)}
 .mode-card{background:var(--surface-1);border:0.5px solid var(--border);border-radius:12px;padding:1rem 1.25rem;display:flex;align-items:center;gap:12px;cursor:pointer;transition:background 0.15s,border-color 0.15s;-webkit-tap-highlight-color:transparent}
 .mode-card:active{background:var(--surface-0);border-color:var(--border-strong)}
 .mode-icon{width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
-.mode-icon.seq{background:var(--bg-accent)}
+.mode-icon.seq{background:#e8f5e9;color:#2e7d32}.mode-icon.nt{background:var(--bg-accent)}
 .mode-icon.rnd{background:var(--bg-warning)}
 .mode-label{font-size:15px;font-weight:500;color:var(--text-primary);margin-bottom:2px}
 .mode-desc{font-size:12px;color:var(--text-secondary)}
@@ -195,7 +195,7 @@ body{font-family:var(--font-sans)}
     </div>
   </div>
   <div class="mode-card" onclick="clickSeq('nt')">
-    <div class="mode-icon seq"><i class="ti ti-list-numbers" aria-hidden="true"></i></div>
+    <div class="mode-icon nt"><i class="ti ti-list-numbers" aria-hidden="true"></i></div>
     <div>
       <div class="mode-label">신약 순서대로 풀기</div>
       <div class="mode-desc">신약 1번부터 200번까지 순서대로</div>
