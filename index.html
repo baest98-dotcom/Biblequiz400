@@ -295,10 +295,13 @@ body{font-family:var(--font-sans)}
     <div class="options" id="options"></div>
     <div class="feedback-box" id="feedback"></div>
     <div class="explanation-box" id="explanation" style="display:none;background:var(--surface-1);border:0.5px solid var(--border);border-radius:10px;padding:0.85rem 1rem;margin-top:0.5rem;font-size:13px;color:var(--text-secondary);line-height:1.65"></div>
+
   </div>
   <div class="q-footer">
     <button class="btn-quit" onclick="endEarly()">종료</button>
     <button class="btn-next" id="btn-next" onclick="nextQ()" style="display:none">다음 문제 →</button>
+    <button class="btn-wn-remove" id="btn-wn-remove" onclick="removeAndNext()" style="display:none;flex:1;background:#fff4e6;color:#e67e22;border:0.5px solid #fad7a0;border-radius:10px;padding:12px;font-size:13px;font-weight:500;cursor:pointer">오답노트 삭제</button>
+    <button class="btn-wn-keep" id="btn-wn-keep" onclick="keepAndNext()" style="display:none;flex:1;background:#f0f7ff;color:#2471a3;border:0.5px solid #aed6f1;border-radius:10px;padding:12px;font-size:13px;font-weight:500;cursor:pointer">오답노트 유지</button>
   </div>
 </div>
 
@@ -327,6 +330,7 @@ body{font-family:var(--font-sans)}
   </div>
   <div class="result-btns">
     <button class="btn-retry-wrong" id="btn-retry-wrong" onclick="retryWrong()">오답만 다시 풀기</button>
+    <button class="btn-remove-wrong" id="btn-remove-wrong" onclick="removeFromWrongNote()" style="display:none;background:var(--surface-1);border:0.5px solid var(--border);border-radius:10px;padding:14px;font-size:14px;color:var(--text-danger);cursor:pointer;width:100%">오답노트에서 제거</button>
     <button class="btn-restart" onclick="goMain()">처음으로 돌아가기</button>
   </div>
 </div>
@@ -361,7 +365,7 @@ const OT=[
 {q:"가인이 에덴의 동쪽에서 아내와 동침하여 낳은 아들의 이름은?",o:["에녹","셋","므후야엘","라멕"],a:0,e:"가인이 놋 땅에서 에녹을 낳고 성을 쌓아 아들의 이름을 따서 에녹이라 불렀습니다. 창 5장의 에녹과는 다른 인물입니다. (창 4:17)"},
 {q:"에녹은 65세에 므두셀라를 낳은 후 하나님과 몇 년을 동행하였는가?",o:["100년","200년","300년","400년"],a:2,e:"'에녹은 므두셀라를 낳은 후 삼백 년을 하나님과 동행하며' (창 5:22)"},
 {q:"하나님과 동행하다가 육신 그대로 승천한 사람은?",o:["라멕","노아","므두셀라","에녹"],a:3,e:"'에녹이 하나님과 동행하더니 하나님이 그를 데려가시므로 세상에 있지 아니하였더라' (창 5:24)"},
-{q:"노아의 홍수 때 부정한 짐승은 암수 몇 쌍을 태웠는가?",o:["1쌍","2쌍","3쌍","7쌍"],a:1,e:"정결한 짐승은 암수 7쌍, 부정한 짐승은 암수 1쌍씩 태웠습니다. (창 7:2)"},
+{q:"노아의 홍수 때 부정한 짐승은 암수 몇 쌍을 태웠는가?",o:["1쌍","2쌍","3쌍","7쌍"],a:1,e:"부정한 짐승은 암수 2쌍씩 태웠습니다. 창 7:2의 '둘씩'은 암수 한 쌍이 아니라 암 둘, 수 둘 즉 2쌍을 의미합니다. 정결한 짐승은 7쌍입니다."},
 {q:"노아가 600세 되던 해에 홍수가 땅을 덮었다. 비는 며칠간 내렸는가?",o:["40일","70일","100일","365일"],a:0,e:"'사십 주야를 비가 땅에 쏟아졌더라' (창 7:12) 비가 내린 기간은 40일입니다."},
 {q:"아브람이 조카 롯을 구하러 끌고 나간 훈련된 사람들은 몇 명인가?",o:["316명","317명","318명","319명"],a:2,e:"'아브람이…집에서 길리고 훈련된 자 삼백십팔 인을 거느리고' (창 14:14)"},
 {q:"아브람이 그돌라오멜을 무찌르고 돌아왔을 때 떡과 포도주를 가지고 나와 축복한 사람은?",o:["아리옥","베라","살렘","멜기세덱"],a:3,e:"살렘 왕 멜기세덱이 떡과 포도주를 가지고 나왔으며 지극히 높으신 하나님의 제사장이었습니다. (창 14:18)"},
@@ -790,12 +794,18 @@ function saveWrongSet(set) {
 // 문제를 풀 때마다 호출: 정답이면 오답노트에서 제거, 오답이면 추가
 function syncWrongNote(origIdx, isCorrect) {
   const wrongSet = loadWrongSet();
-  if (isCorrect) {
-    wrongSet.delete(origIdx);
+  if (currentRetryIsWrongNote) {
+    // 오답노트 풀이 중: 정답이어도 제거하지 않고 유지 (반복 학습)
+    // 오답이면 이미 있으므로 변화 없음
   } else {
-    wrongSet.add(origIdx);
+    // 일반 모드: 정답이면 오답노트에서 제거, 오답이면 추가
+    if (isCorrect) {
+      wrongSet.delete(origIdx);
+    } else {
+      wrongSet.add(origIdx);
+    }
+    saveWrongSet(wrongSet);
   }
-  saveWrongSet(wrongSet);
   updateWrongNoteBanner();
 }
 
@@ -1069,6 +1079,9 @@ function renderQ() {
   fb.className='feedback-box'; fb.textContent='';
   document.getElementById('btn-next').style.display='none';
   const expEl=document.getElementById('explanation'); if(expEl){expEl.style.display='none';expEl.textContent='';}
+  // 오답노트 버튼 숨김
+  const wnR=document.getElementById('btn-wn-remove'); if(wnR) wnR.style.display='none';
+  const wnK=document.getElementById('btn-wn-keep'); if(wnK) wnK.style.display='none';
   const opts = document.getElementById('options');
   opts.innerHTML='';
   ['①','②','③','④'].forEach((letter,i) => {
@@ -1116,6 +1129,15 @@ function pick(i, ans, btn, q) {
   const expBox = document.getElementById('explanation');
   if (q.e) { expBox.textContent = q.e; expBox.style.display = 'block'; }
   else { expBox.style.display = 'none'; }
+  // 오답노트 풀이 중: 다음 문제 버튼 대신 제거/남기기 버튼 표시
+  const btnNext = document.getElementById('btn-next');
+  const btnWnR = document.getElementById('btn-wn-remove');
+  const btnWnK = document.getElementById('btn-wn-keep');
+  if (currentRetryIsWrongNote) {
+    if (btnNext) btnNext.style.display = 'none';
+    if (btnWnR) { btnWnR.style.display = 'block'; btnWnR.dataset.idx = origIdx; }
+    if (btnWnK) { btnWnK.style.display = 'block'; btnWnK.dataset.idx = origIdx; }
+  }
 }
 
 function nextQ() {
@@ -1153,14 +1175,43 @@ function showResult() {
   bestStreak = 0;
   document.getElementById('ring-arc').setAttribute('stroke-dashoffset',(289*(1-pct/100)).toFixed(1));
   const btn=document.getElementById('btn-retry-wrong');
+  const btnRemove=document.getElementById('btn-remove-wrong');
+  if (btnRemove) btnRemove.style.display = 'none';
   if (wasWrongNote) {
-    // 오답노트 자체를 풀 때는 '오답 다시 풀기' 버튼 숨김
     btn.style.display = 'none';
   } else {
     btn.style.display = '';
     btn.disabled=noSet.size===0;
     btn.textContent=noSet.size>0?'오답 '+noSet.size+'문항 다시 풀기':'오답 없음';
   }
+}
+
+function removeAndNext() {
+  const btn = document.getElementById('btn-wn-remove');
+  const idx = btn ? parseInt(btn.dataset.idx) : -1;
+  if (idx >= 0) {
+    const wrongSet = loadWrongSet();
+    wrongSet.delete(idx);
+    saveWrongSet(wrongSet);
+    updateWrongNoteBanner();
+  }
+  nextQ();
+}
+
+function keepAndNext() {
+  nextQ();
+}
+
+function removeFromWrongNote() {
+  // 이번 세션에서 정답 맞힌 문항들을 오답노트에서 제거
+  const wrongSet = loadWrongSet();
+  okSet.forEach(idx => wrongSet.delete(idx));
+  saveWrongSet(wrongSet);
+  updateWrongNoteBanner();
+  document.getElementById('btn-remove-wrong').style.display = 'none';
+  document.getElementById('btn-remove-wrong').textContent = '제거 완료 ✓';
+  document.getElementById('btn-remove-wrong').style.display = 'block';
+  document.getElementById('btn-remove-wrong').disabled = true;
 }
 
 function retryWrong() {
