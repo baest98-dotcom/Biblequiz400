@@ -208,6 +208,20 @@ body{font-family:var(--font-sans)}
     <h1>성경고사 문제은행</h1>
     <p>구약 200문항 · 신약 200문항</p>
   </div>
+  <div class="mode-card" onclick="clickSeq('ot')">
+    <div class="mode-icon seq"><i class="ti ti-list-numbers" aria-hidden="true"></i></div>
+    <div>
+      <div class="mode-label">구약 순서대로 풀기</div>
+      <div class="mode-desc">구약 1번부터 200번까지 순서대로</div>
+    </div>
+  </div>
+  <div class="mode-card" onclick="clickSeq('nt')">
+    <div class="mode-icon nt"><i class="ti ti-list-numbers" aria-hidden="true"></i></div>
+    <div>
+      <div class="mode-label">신약 순서대로 풀기</div>
+      <div class="mode-desc">신약 1번부터 200번까지 순서대로</div>
+    </div>
+  </div>
   <div class="mode-card" onclick="clickRandom()">
     <div class="mode-icon rnd"><i class="ti ti-shuffle" aria-hidden="true"></i></div>
     <div>
@@ -223,7 +237,7 @@ body{font-family:var(--font-sans)}
     </div>
   </div>
 
-  <section class="book-section" aria-labelledby="book-title"><h2 id="book-title">성경 책별로 풀기</h2><p class="book-note">배너를 누르면 해당 책의 문제만 순서대로 풉니다.<br>진행 기록이 있으면 이어서 풀거나 처음부터 시작할 수 있습니다.<br>여러 책을 함께 비교하는 문항은 종합에 모았습니다.</p><div id="book-banners"></div></section>
+  <section class="book-section" aria-labelledby="book-title"><h2 id="book-title">성경 책별로 풀기</h2><p class="book-note">배너를 누르면 해당 책의 문제만 순서대로 풉니다.<br>여러 책을 함께 비교하는 문항은 종합에 모았습니다.</p><div id="book-banners"></div></section>
   <div style="background:var(--surface-1);border:0.5px solid var(--border);border-radius:10px;padding:1rem;font-size:12px;color:var(--text-secondary);line-height:1.7;margin-top:4px">
     💡 <b style="color:var(--text-primary)">이용 안내</b><br>
     · 이어서 풀기 기능은 <b>크롬(Chrome) 브라우저</b>에서만 지원되며, 삼성 브라우저 등 다른 브라우저에서는 작동하지 않을 수 있습니다<br>
@@ -287,7 +301,7 @@ body{font-family:var(--font-sans)}
 
   </div>
   <div class="q-footer">
-    <button class="btn-quit" onclick="endEarly()">저장하고 나가기</button>
+    <button class="btn-quit" onclick="endEarly()">종료</button>
     <button class="btn-next" id="btn-next" onclick="nextQ()" style="display:none">다음 문제 →</button>
     <button class="btn-wn-remove" id="btn-wn-remove" onclick="removeAndNext()" style="display:none;flex:1;background:#fff4e6;color:#e67e22;border:0.5px solid #fad7a0;border-radius:10px;padding:12px;font-size:13px;font-weight:500;cursor:pointer">오답노트 삭제</button>
     <button class="btn-wn-keep" id="btn-wn-keep" onclick="keepAndNext()" style="display:none;flex:1;background:#f0f7ff;color:#2471a3;border:0.5px solid #aed6f1;border-radius:10px;padding:12px;font-size:13px;font-weight:500;cursor:pointer">오답노트 유지</button>
@@ -850,7 +864,7 @@ function clickWrongNote() {
     document.querySelector('#screen-resume-rnd button:nth-of-type(1)').setAttribute('onclick', 'doResumeWrongNote()');
     document.querySelector('#screen-resume-rnd button:nth-of-type(2)').setAttribute('onclick', 'startWrongNote()');
     document.getElementById('resume-info-rnd').textContent =
-      s.qIdx + '문항을 풀었습니다 (정답 ' + s.okArr.length + '개 / 오답 ' + s.noArr.length + '개)';
+      s.qIdx + '번 문제까지 풀었습니다 (정답 ' + s.okArr.length + '개 / 오답 ' + s.noArr.length + '개)';
     showScreen('screen-resume-rnd');
   } else {
     startWrongNote();
@@ -900,7 +914,7 @@ function saveLocal() {
   if (isRetry) return;
   try {
     const data = JSON.stringify({
-      qIdx: isSeq && seqMode.startsWith('book:') && answered ? qIdx + 1 : qIdx,
+      qIdx: qIdx,
       okArr: [...okSet],
       noArr: [...noSet],
       queueIds: isSeq ? null : queue.map(q => ALL.indexOf(q))
@@ -1018,7 +1032,7 @@ function clickSeq(mode) {
     const title = seqTitle();
     document.getElementById('resume-seq-title').textContent = title;
     document.getElementById('resume-info').textContent =
-      s.qIdx + '문항을 풀었습니다 (정답 ' + s.okArr.length + '개 / 오답 ' + s.noArr.length + '개)';
+      s.qIdx + '번 문제까지 풀었습니다 (정답 ' + s.okArr.length + '개 / 오답 ' + s.noArr.length + '개)';
     showScreen('screen-resume');
   } else {
     startSeq();
@@ -1051,7 +1065,7 @@ function clickRandom() {
     document.querySelector('#screen-resume-rnd button:nth-of-type(1)').setAttribute('onclick', 'doResumeRnd()');
     document.querySelector('#screen-resume-rnd button:nth-of-type(2)').setAttribute('onclick', 'startRandom()');
     document.getElementById('resume-info-rnd').textContent =
-      s.qIdx + '문항을 풀었습니다 (정답 ' + s.okArr.length + '개 / 오답 ' + s.noArr.length + '개)';
+      s.qIdx + '번 문제까지 풀었습니다 (정답 ' + s.okArr.length + '개 / 오답 ' + s.noArr.length + '개)';
     showScreen('screen-resume-rnd');
   } else {
     startRandom();
@@ -1159,19 +1173,12 @@ function pick(i, ans, btn, q) {
 
 function nextQ() {
   qIdx++;
-  answered = false;
   if (!isRetry) saveLocal();
   if (currentRetryIsWrongNote) saveWrongProgress();
   renderQ();
 }
 
 function endEarly() {
-  if (isSeq && seqMode.startsWith('book:') && !isRetry) {
-    saveLocal();
-    if (qIdx + (answered ? 1 : 0) >= queue.length) { showResult(); return; }
-    goMain();
-    return;
-  }
   showResult();
 }
 
@@ -1252,7 +1259,7 @@ window.addEventListener('load', () => {
   const s = loadFromUrl();
   if (s && s.qIdx > 0) {
     document.getElementById('resume-info').textContent =
-      s.qIdx + '문항을 풀었습니다 (정답 ' + s.okArr.length + '개 / 오답 ' + s.noArr.length + '개)';
+      s.qIdx + '번 문제까지 풀었습니다 (정답 ' + s.okArr.length + '개 / 오답 ' + s.noArr.length + '개)';
     showScreen('screen-resume');
   }
 });
