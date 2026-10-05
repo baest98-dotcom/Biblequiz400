@@ -208,6 +208,21 @@ body{font-family:var(--font-sans)}
     <h1>성경고사 문제은행</h1>
     <p>구약 200문항 · 신약 200문항</p>
   </div>
+  <div class="mode-card" onclick="clickRandom()">
+    <div class="mode-icon rnd"><i class="ti ti-shuffle" aria-hidden="true"></i></div>
+    <div>
+      <div class="mode-label">무작위로 풀기</div>
+      <div class="mode-desc">400문항을 무작위 순서로</div>
+    </div>
+  </div>
+  <div class="mode-card" id="wrongnote-card" onclick="clickWrongNote()" style="display:none">
+    <div class="mode-icon wrong" style="font-size:20px;line-height:1">📝</div>
+    <div>
+      <div class="mode-label">오답 노트</div>
+      <div class="mode-desc" id="wrongnote-desc">모아둔 오답 문항을 다시 풀어보세요</div>
+    </div>
+  </div>
+
   <section class="book-section" aria-labelledby="book-title"><h2 id="book-title">성경 책별로 풀기</h2><p class="book-note">배너를 누르면 해당 책의 문제만 순서대로 풉니다.<br>진행 기록이 있으면 이어서 풀거나 처음부터 시작할 수 있습니다.<br>여러 책을 함께 비교하는 문항은 종합에 모았습니다.</p><div id="book-banners"></div></section>
   <div style="background:var(--surface-1);border:0.5px solid var(--border);border-radius:10px;padding:1rem;font-size:12px;color:var(--text-secondary);line-height:1.7;margin-top:4px">
     💡 <b style="color:var(--text-primary)">이용 안내</b><br>
