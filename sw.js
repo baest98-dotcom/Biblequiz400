@@ -1,5 +1,5 @@
-const CACHE = 'bible-quiz-v3';
-const FILES = ['/', '/index.html', '/manifest.json'];
+const CACHE = 'bible-quiz-v4-books';
+const FILES = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', e => {
   e.waitUntil(
@@ -25,6 +25,6 @@ self.addEventListener('fetch', e => {
         caches.open(CACHE).then(c => c.put(e.request, resClone));
         return res;
       })
-      .catch(() => caches.match(e.request).then(cached => cached || caches.match('/index.html')))
+      .catch(() => caches.match(e.request).then(cached => cached || caches.match('./index.html')))
   );
 });

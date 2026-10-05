@@ -1,26 +1,21 @@
 {
   "name": "성경고사 문제은행",
   "short_name": "성경고사",
-  "description": "구약 200문항 + 신약 200문항 성경고사 퀴즈 앱",
-  "start_url": "/Biblequiz400/",
-  "scope": "/Biblequiz400/",
+  "start_url": "./",
+  "scope": "./",
   "display": "standalone",
   "background_color": "#f5f5f4",
   "theme_color": "#378add",
-  "orientation": "portrait",
-  "lang": "ko",
   "icons": [
     {
       "src": "icon-192.png",
       "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any maskable"
+      "type": "image/png"
     },
     {
       "src": "icon-512.png",
       "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
+      "type": "image/png"
     }
   ]
 }

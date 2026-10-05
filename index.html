@@ -195,6 +195,8 @@ body{font-family:var(--font-sans)}
 .modal-btns { display:flex;gap:8px }
 .btn-copy { flex:1;background:var(--fill-accent);color:var(--on-accent);border:none;border-radius:8px;padding:11px;font-size:14px;font-weight:500;cursor:pointer }
 .btn-close-modal { background:var(--surface-1);border:0.5px solid var(--border);border-radius:8px;padding:11px 14px;font-size:14px;color:var(--text-secondary);cursor:pointer }
+
+.book-section{margin-top:8px}.book-section h2{font-size:17px;color:var(--text-primary);margin:8px 0}.book-note{font-size:12px;line-height:1.6;color:var(--text-secondary);margin-bottom:12px}.book-heading{font-size:13px;color:var(--text-secondary);margin:16px 0 8px}.book-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.book-banner{border:1px solid var(--border);background:var(--surface-2);color:var(--text-primary);border-radius:10px;padding:12px 6px;min-height:72px;cursor:pointer;font-family:inherit}.book-banner strong{display:block;font-size:13px;font-weight:600}.book-banner span{display:block;font-size:11px;color:var(--text-secondary);margin-top:6px}.book-banner:active{background:var(--bg-accent)}.book-banner:focus-visible{outline:2px solid var(--fill-accent);outline-offset:2px}.book-banner.saved{border-color:var(--border-accent);background:var(--bg-accent)}
 </style>
 </head>
 <body>
@@ -235,6 +237,7 @@ body{font-family:var(--font-sans)}
     </div>
   </div>
 
+  <section class="book-section" aria-labelledby="book-title"><h2 id="book-title">성경 책별로 풀기</h2><p class="book-note">배너를 누르면 해당 책의 문제만 순서대로 풉니다.<br>여러 책을 함께 비교하는 문항은 종합에 모았습니다.</p><div id="book-banners"></div></section>
   <div style="background:var(--surface-1);border:0.5px solid var(--border);border-radius:10px;padding:1rem;font-size:12px;color:var(--text-secondary);line-height:1.7;margin-top:4px">
     💡 <b style="color:var(--text-primary)">이용 안내</b><br>
     · 이어서 풀기 기능은 <b>크롬(Chrome) 브라우저</b>에서만 지원되며, 삼성 브라우저 등 다른 브라우저에서는 작동하지 않을 수 있습니다<br>
@@ -761,6 +764,33 @@ const NT=[
 ];
 const ALL=[...OT.map((q,i)=>({...q,sec:'OT',num:i+1})),...NT.map((q,i)=>({...q,sec:'NT',num:i+1}))];
 
+
+// 문제·보기·정답·해설은 기존 OT/NT 그대로 사용합니다.
+const BOOK_MAP = {"OT": ["창세기", "창세기", "창세기", "창세기", "창세기", "창세기", "창세기", "창세기", "창세기", "창세기", "창세기", "창세기", "창세기", "창세기", "창세기", "창세기", "창세기", "창세기", "창세기", "출애굽기", "출애굽기", "출애굽기", "출애굽기", "출애굽기", "출애굽기", "출애굽기", "출애굽기", "출애굽기", "민수기", "출애굽기", "레위기", "레위기", "레위기", "민수기", "레위기", "레위기", "레위기", "민수기", "민수기", "민수기", "민수기", "구약 종합", "구약 종합", "신명기", "신명기", "신명기", "신명기", "신명기", "신명기", "신명기", "여호수아", "여호수아", "여호수아", "여호수아", "여호수아", "여호수아", "룻기", "룻기", "룻기", "룻기", "사사기", "사사기", "사사기", "사사기", "사사기", "사사기", "사무엘상", "사무엘상", "사무엘상", "사무엘상", "사무엘하", "사무엘하", "사무엘하", "구약 종합", "구약 종합", "구약 종합", "사무엘하", "사무엘하", "사무엘하", "열왕기상", "열왕기상", "열왕기상", "열왕기하", "열왕기상", "구약 종합", "열왕기하", "구약 종합", "열왕기하", "열왕기하", "열왕기하", "구약 종합", "열왕기하", "에스라", "학개", "에스라", "에스라", "에스라", "에스라", "에스더", "역대하", "욥기", "욥기", "욥기", "욥기", "욥기", "욥기", "욥기", "욥기", "시편", "시편", "시편", "시편", "시편", "시편", "시편", "시편", "잠언", "잠언", "잠언", "잠언", "잠언", "전도서", "전도서", "전도서", "전도서", "전도서", "아가", "아가", "아가", "아가", "이사야", "이사야", "이사야", "이사야", "구약 종합", "이사야", "이사야", "이사야", "이사야", "이사야", "이사야", "구약 종합", "예레미야", "예레미야", "예레미야", "예레미야", "예레미야", "예레미야", "예레미야", "예레미야", "에스겔", "에스겔", "이사야", "예레미야", "에스겔", "에스겔", "에스겔", "에스겔", "에스겔", "에스겔", "다니엘", "다니엘", "다니엘", "다니엘", "다니엘", "호세아", "호세아", "호세아", "호세아", "요엘", "요엘", "요엘", "요엘", "아모스", "아모스", "아모스", "오바댜", "요나", "미가", "미가", "미가", "미가", "미가", "나훔", "나훔", "하박국", "하박국", "하박국", "스바냐", "스바냐", "학개", "학개", "스가랴", "스가랴", "스가랴", "스가랴", "스가랴", "말라기", "말라기", "이사야"], "NT": ["마태복음", "마태복음", "마태복음", "마태복음", "마태복음", "마태복음", "마태복음", "마태복음", "마태복음", "마태복음", "마태복음", "마태복음", "마태복음", "마태복음", "마태복음", "마태복음", "마태복음", "마태복음", "마태복음", "마태복음", "마가복음", "마가복음", "마가복음", "마가복음", "마가복음", "마가복음", "마가복음", "마가복음", "마가복음", "마가복음", "마가복음", "마가복음", "마가복음", "마가복음", "마가복음", "마가복음", "누가복음", "누가복음", "누가복음", "누가복음", "누가복음", "누가복음", "누가복음", "신약 종합", "누가복음", "누가복음", "누가복음", "누가복음", "누가복음", "누가복음", "누가복음", "신약 종합", "누가복음", "누가복음", "누가복음", "누가복음", "누가복음", "누가복음", "누가복음", "누가복음", "누가복음", "요한복음", "요한복음", "요한복음", "요한복음", "요한복음", "요한복음", "요한복음", "요한복음", "요한복음", "요한복음", "요한복음", "요한복음", "요한복음", "요한복음", "요한복음", "요한복음", "요한복음", "요한복음", "요한복음", "요한복음", "사도행전", "사도행전", "사도행전", "사도행전", "사도행전", "사도행전", "사도행전", "사도행전", "사도행전", "사도행전", "사도행전", "사도행전", "사도행전", "사도행전", "사도행전", "사도행전", "사도행전", "사도행전", "사도행전", "사도행전", "사도행전", "사도행전", "사도행전", "사도행전", "사도행전", "사도행전", "사도행전", "로마서", "로마서", "로마서", "로마서", "로마서", "로마서", "로마서", "로마서", "로마서", "로마서", "로마서", "로마서", "로마서", "로마서", "로마서", "로마서", "로마서", "로마서", "로마서", "신약 종합", "신약 종합", "로마서", "고린도전서", "고린도전서", "고린도전서", "고린도전서", "고린도후서", "고린도후서", "고린도전서", "고린도전서", "고린도전서", "고린도후서", "고린도전서", "고린도후서", "고린도전서", "고린도전서", "고린도전서", "고린도전서", "고린도후서", "고린도후서", "갈라디아서", "에베소서", "골로새서", "신약 종합", "빌립보서", "에베소서", "빌레몬서", "빌레몬서", "디모데전서", "갈라디아서", "빌립보서", "골로새서", "갈라디아서", "에베소서", "빌립보서", "골로새서", "디모데후서", "디모데전서", "디모데전서", "데살로니가전서", "디도서", "디모데후서", "데살로니가전서", "데살로니가후서", "디모데후서", "신약 종합", "데살로니가후서", "데살로니가후서", "데살로니가전서", "디모데전서", "디모데후서", "히브리서", "히브리서", "야고보서", "야고보서", "야고보서", "신약 종합", "베드로전서", "베드로전서", "베드로전서", "베드로전서", "베드로전서", "베드로전서", "베드로후서", "베드로후서", "신약 종합", "유다서", "요한일서", "요한일서", "요한계시록", "요한계시록", "요한계시록"]};
+function seqQuestions(mode=seqMode){
+  if(mode.startsWith('book:')){const [,sec,book]=mode.split(':');return ALL.filter(q=>q.sec===sec && BOOK_MAP[sec][q.num-1]===book);}
+  return mode==='nt'?NT_ARR:OT_ARR;
+}
+function seqSaveKey(mode=seqMode){return mode.startsWith('book:')?'bqBookSave:'+mode:mode==='nt'?SAVE_KEY_NT:SAVE_KEY_OT;}
+function seqTitle(){return seqMode.startsWith('book:')?seqMode.split(':')[2]+' 문제 풀기':seqMode==='nt'?'신약 순서대로 풀기':'구약 순서대로 풀기';}
+function renderBookBanners(){
+ const root=document.getElementById('book-banners');root.replaceChildren();
+ for(const sec of ['OT','NT']){
+  const h=document.createElement('h3');h.className='book-heading';h.textContent=sec==='OT'?'구약':'신약';root.appendChild(h);
+  const grid=document.createElement('div');grid.className='book-grid';root.appendChild(grid);
+  const books=[...new Set(BOOK_MAP[sec])];
+  for(const book of books){
+   const mode='book:'+sec+':'+book,items=seqQuestions(mode),saved=loadLocal(mode);
+   const continuing=saved && saved.qIdx>0 && saved.qIdx<items.length;
+   const btn=document.createElement('button');btn.className='book-banner'+(continuing?' saved':'');btn.type='button';
+   const name=document.createElement('strong');name.textContent=book;
+   const count=document.createElement('span');count.textContent=items.length+'문항'+(continuing?' · 이어서 풀기':'');
+   btn.append(name,count);btn.onclick=()=>clickSeq(mode);grid.appendChild(btn);
+  }
+ }
+}
+window.addEventListener('load',renderBookBanners);
+
 // 전역 상태
 let queue=[], qIdx=0, okSet=new Set(), noSet=new Set(), answered=false, isRetry=false, isSeq=false, seqMode='', streak=0, bestStreak=0;
 let OT_ARR=[], NT_ARR=[];
@@ -889,14 +919,14 @@ function saveLocal() {
       noArr: [...noSet],
       queueIds: isSeq ? null : queue.map(q => ALL.indexOf(q))
     });
-    const key = isSeq ? (seqMode==='nt' ? SAVE_KEY_NT : SAVE_KEY_OT) : SAVE_KEY_RND;
+    const key = isSeq ? seqSaveKey() : SAVE_KEY_RND;
     localStorage.setItem(key, data);
     sessionStorage.setItem(key, data);
   } catch(e) {}
 }
 function clearLocalSeq() {
   try {
-    const key = seqMode==='nt' ? SAVE_KEY_NT : SAVE_KEY_OT;
+    const key = seqSaveKey();
     localStorage.removeItem(key); sessionStorage.removeItem(key);
   } catch(e) {}
 }
@@ -904,7 +934,7 @@ function clearLocalRnd() {
   try { localStorage.removeItem(SAVE_KEY_RND); sessionStorage.removeItem(SAVE_KEY_RND); } catch(e) {}
 }
 function loadLocal(mode) {
-  const key = mode==='rnd' ? SAVE_KEY_RND : mode==='wrongnote' ? WRONG_PROGRESS_KEY : mode==='nt' ? SAVE_KEY_NT : SAVE_KEY_OT;
+  const key = mode==='rnd' ? SAVE_KEY_RND : mode==='wrongnote' ? WRONG_PROGRESS_KEY : seqSaveKey(mode);
   try {
     const raw = localStorage.getItem(key) || sessionStorage.getItem(key);
     const s = JSON.parse(raw);
@@ -991,15 +1021,15 @@ function showScreen(id) {
   document.getElementById(id).classList.add('active');
 }
 
-function goMain() { currentRetryIsWrongNote = false; updateWrongNoteBanner(); showScreen('screen-main'); }
+function goMain() { currentRetryIsWrongNote = false; renderBookBanners(); updateWrongNoteBanner(); showScreen('screen-main'); }
 
 // 순서대로 버튼 클릭
 function clickSeq(mode) {
   seqMode = mode || 'ot';
-  const seqLen = seqMode==='nt' ? NT_ARR.length : OT_ARR.length;
-  const s = loadLocal(seqMode) || loadFromUrl();
+  const seqLen = seqQuestions().length;
+  const s = loadLocal(seqMode) || (seqMode.startsWith('book:') ? null : loadFromUrl());
   if (s && s.qIdx > 0 && s.qIdx < seqLen) {
-    const title = seqMode==='nt' ? '신약 순서대로 풀기' : '구약 순서대로 풀기';
+    const title = seqTitle();
     document.getElementById('resume-seq-title').textContent = title;
     document.getElementById('resume-info').textContent =
       s.qIdx + '번 문제까지 풀었습니다 (정답 ' + s.okArr.length + '개 / 오답 ' + s.noArr.length + '개)';
@@ -1011,16 +1041,16 @@ function clickSeq(mode) {
 
 function startSeq() {
   clearLocalSeq();
-  queue = seqMode==='nt' ? NT_ARR : OT_ARR;
+  queue = seqQuestions();
   qIdx=0; okSet=new Set(); noSet=new Set(); answered=false; isRetry=false; isSeq=true; streak=0;
   showScreen('quiz-screen');
   renderQ();
 }
 
 function doResume() {
-  const s = loadLocal(seqMode) || loadFromUrl();
+  const s = loadLocal(seqMode) || (seqMode.startsWith('book:') ? null : loadFromUrl());
   if (!s) { startSeq(); return; }
-  queue = seqMode==='nt' ? NT_ARR : OT_ARR;
+  queue = seqQuestions();
   qIdx=s.qIdx; okSet=new Set(s.okArr); noSet=new Set(s.noArr);
   answered=false; isRetry=false; isSeq=true; streak=0;
   history.replaceState(null, '', location.pathname);
@@ -1073,6 +1103,7 @@ function renderQ() {
   document.getElementById('cnt-no').textContent = noSet.size;
   const badge = document.getElementById('sec-badge');
   badge.textContent = curQ.sec==='OT' ? '구약 '+curQ.num+'번' : '신약 '+curQ.num+'번';
+  badge.textContent += ' · '+BOOK_MAP[curQ.sec][curQ.num-1];
   badge.className = 'sec-badge '+curQ.sec;
   document.getElementById('q-text').textContent = curQ.q;
   const fb = document.getElementById('feedback');
