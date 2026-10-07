@@ -208,36 +208,25 @@ body{font-family:var(--font-sans)}
     <h1>성경고사 문제은행</h1>
     <p>구약 200문항 · 신약 200문항</p>
   </div>
-  <div class="mode-card" onclick="clickSeq('ot')">
-    <div class="mode-icon seq"><i class="ti ti-list-numbers" aria-hidden="true"></i></div>
-    <div>
-      <div class="mode-label">구약 순서대로 풀기</div>
-      <div class="mode-desc">구약 1번부터 200번까지 순서대로</div>
-    </div>
-  </div>
-  <div class="mode-card" onclick="clickSeq('nt')">
-    <div class="mode-icon nt"><i class="ti ti-list-numbers" aria-hidden="true"></i></div>
-    <div>
-      <div class="mode-label">신약 순서대로 풀기</div>
-      <div class="mode-desc">신약 1번부터 200번까지 순서대로</div>
-    </div>
-  </div>
-  <div class="mode-card" onclick="clickRandom()">
+  <div class="mode-card" onclick="clickRandom('ot')">
     <div class="mode-icon rnd"><i class="ti ti-shuffle" aria-hidden="true"></i></div>
-    <div>
-      <div class="mode-label">무작위로 풀기</div>
-      <div class="mode-desc">400문항을 무작위 순서로</div>
-    </div>
+    <div><div class="mode-label">구약 200문제 무작위로 풀기</div><div class="mode-desc">구약 200문항을 무작위 순서로</div></div>
+  </div>
+  <div class="mode-card" onclick="clickRandom('nt')">
+    <div class="mode-icon rnd"><i class="ti ti-shuffle" aria-hidden="true"></i></div>
+    <div><div class="mode-label">신약 200문제 무작위로 풀기</div><div class="mode-desc">신약 200문항을 무작위 순서로</div></div>
+  </div>
+  <div class="mode-card" onclick="clickRandom('all')">
+    <div class="mode-icon rnd"><i class="ti ti-shuffle" aria-hidden="true"></i></div>
+    <div><div class="mode-label">구·신약 400문제 무작위로 풀기</div><div class="mode-desc">400문항을 무작위 순서로</div></div>
   </div>
   <div class="mode-card" id="wrongnote-card" onclick="clickWrongNote()" style="display:none">
     <div class="mode-icon wrong" style="font-size:20px;line-height:1">📝</div>
-    <div>
-      <div class="mode-label">오답 노트</div>
-      <div class="mode-desc" id="wrongnote-desc">모아둔 오답 문항을 다시 풀어보세요</div>
-    </div>
+    <div><div class="mode-label">오답 노트</div><div class="mode-desc" id="wrongnote-desc">모아둔 오답 문항을 다시 풀어보세요</div></div>
   </div>
+  <section class="book-section" aria-labelledby="book-title"><h2 id="book-title">성경 책별로 풀기</h2><p class="book-note">배너를 누르면 해당 책의 문제만 순서대로 풉니다.<br>여러 책을 함께 비교하는 문항은 종합에 모았습니다.<br>진행 기록이 있으면 이어서 풀거나 처음부터 시작할 수 있습니다.</p><div id="book-banners"></div></section>
 
-  <section class="book-section" aria-labelledby="book-title"><h2 id="book-title">성경 책별로 풀기</h2><p class="book-note">배너를 누르면 해당 책의 문제만 순서대로 풉니다.<br>여러 책을 함께 비교하는 문항은 종합에 모았습니다.</p><div id="book-banners"></div></section>
+
   <div style="background:var(--surface-1);border:0.5px solid var(--border);border-radius:10px;padding:1rem;font-size:12px;color:var(--text-secondary);line-height:1.7;margin-top:4px">
     💡 <b style="color:var(--text-primary)">이용 안내</b><br>
     · 이어서 풀기 기능은 <b>크롬(Chrome) 브라우저</b>에서만 지원되며, 삼성 브라우저 등 다른 브라우저에서는 작동하지 않을 수 있습니다<br>
@@ -301,7 +290,7 @@ body{font-family:var(--font-sans)}
 
   </div>
   <div class="q-footer">
-    <button class="btn-quit" onclick="endEarly()">종료</button>
+    <button class="btn-quit" onclick="endEarly()">저장하고 나가기</button>
     <button class="btn-next" id="btn-next" onclick="nextQ()" style="display:none">다음 문제 →</button>
     <button class="btn-wn-remove" id="btn-wn-remove" onclick="removeAndNext()" style="display:none;flex:1;background:#fff4e6;color:#e67e22;border:0.5px solid #fad7a0;border-radius:10px;padding:12px;font-size:13px;font-weight:500;cursor:pointer">오답노트 삭제</button>
     <button class="btn-wn-keep" id="btn-wn-keep" onclick="keepAndNext()" style="display:none;flex:1;background:#f0f7ff;color:#2471a3;border:0.5px solid #aed6f1;border-radius:10px;padding:12px;font-size:13px;font-weight:500;cursor:pointer">오답노트 유지</button>
@@ -766,7 +755,7 @@ const ALL=[...OT.map((q,i)=>({...q,sec:'OT',num:i+1})),...NT.map((q,i)=>({...q,s
 
 
 // 문제·보기·정답·해설은 기존 OT/NT 그대로 사용합니다.
-const BOOK_MAP = {"OT": ["창세기", "창세기", "창세기", "창세기", "창세기", "창세기", "창세기", "창세기", "창세기", "창세기", "창세기", "창세기", "창세기", "창세기", "창세기", "창세기", "창세기", "창세기", "창세기", "출애굽기", "출애굽기", "출애굽기", "출애굽기", "출애굽기", "출애굽기", "출애굽기", "출애굽기", "출애굽기", "민수기", "출애굽기", "레위기", "레위기", "레위기", "민수기", "레위기", "레위기", "레위기", "민수기", "민수기", "민수기", "민수기", "구약 종합", "구약 종합", "신명기", "신명기", "신명기", "신명기", "신명기", "신명기", "신명기", "여호수아", "여호수아", "여호수아", "여호수아", "여호수아", "여호수아", "룻기", "룻기", "룻기", "룻기", "사사기", "사사기", "사사기", "사사기", "사사기", "사사기", "사무엘상", "사무엘상", "사무엘상", "사무엘상", "사무엘하", "사무엘하", "사무엘하", "구약 종합", "구약 종합", "구약 종합", "사무엘하", "사무엘하", "사무엘하", "열왕기상", "열왕기상", "열왕기상", "열왕기하", "열왕기상", "구약 종합", "열왕기하", "구약 종합", "열왕기하", "열왕기하", "열왕기하", "구약 종합", "열왕기하", "에스라", "학개", "에스라", "에스라", "에스라", "에스라", "에스더", "역대하", "욥기", "욥기", "욥기", "욥기", "욥기", "욥기", "욥기", "욥기", "시편", "시편", "시편", "시편", "시편", "시편", "시편", "시편", "잠언", "잠언", "잠언", "잠언", "잠언", "전도서", "전도서", "전도서", "전도서", "전도서", "아가", "아가", "아가", "아가", "이사야", "이사야", "이사야", "이사야", "구약 종합", "이사야", "이사야", "이사야", "이사야", "이사야", "이사야", "구약 종합", "예레미야", "예레미야", "예레미야", "예레미야", "예레미야", "예레미야", "예레미야", "예레미야", "에스겔", "에스겔", "이사야", "예레미야", "에스겔", "에스겔", "에스겔", "에스겔", "에스겔", "에스겔", "다니엘", "다니엘", "다니엘", "다니엘", "다니엘", "호세아", "호세아", "호세아", "호세아", "요엘", "요엘", "요엘", "요엘", "아모스", "아모스", "아모스", "오바댜", "요나", "미가", "미가", "미가", "미가", "미가", "나훔", "나훔", "하박국", "하박국", "하박국", "스바냐", "스바냐", "학개", "학개", "스가랴", "스가랴", "스가랴", "스가랴", "스가랴", "말라기", "말라기", "이사야"], "NT": ["마태복음", "마태복음", "마태복음", "마태복음", "마태복음", "마태복음", "마태복음", "마태복음", "마태복음", "마태복음", "마태복음", "마태복음", "마태복음", "마태복음", "마태복음", "마태복음", "마태복음", "마태복음", "마태복음", "마태복음", "마가복음", "마가복음", "마가복음", "마가복음", "마가복음", "마가복음", "마가복음", "마가복음", "마가복음", "마가복음", "마가복음", "마가복음", "마가복음", "마가복음", "마가복음", "마가복음", "누가복음", "누가복음", "누가복음", "누가복음", "누가복음", "누가복음", "누가복음", "신약 종합", "누가복음", "누가복음", "누가복음", "누가복음", "누가복음", "누가복음", "누가복음", "신약 종합", "누가복음", "누가복음", "누가복음", "누가복음", "누가복음", "누가복음", "누가복음", "누가복음", "누가복음", "요한복음", "요한복음", "요한복음", "요한복음", "요한복음", "요한복음", "요한복음", "요한복음", "요한복음", "요한복음", "요한복음", "요한복음", "요한복음", "요한복음", "요한복음", "요한복음", "요한복음", "요한복음", "요한복음", "요한복음", "사도행전", "사도행전", "사도행전", "사도행전", "사도행전", "사도행전", "사도행전", "사도행전", "사도행전", "사도행전", "사도행전", "사도행전", "사도행전", "사도행전", "사도행전", "사도행전", "사도행전", "사도행전", "사도행전", "사도행전", "사도행전", "사도행전", "사도행전", "사도행전", "사도행전", "사도행전", "사도행전", "로마서", "로마서", "로마서", "로마서", "로마서", "로마서", "로마서", "로마서", "로마서", "로마서", "로마서", "로마서", "로마서", "로마서", "로마서", "로마서", "로마서", "로마서", "로마서", "신약 종합", "신약 종합", "로마서", "고린도전서", "고린도전서", "고린도전서", "고린도전서", "고린도후서", "고린도후서", "고린도전서", "고린도전서", "고린도전서", "고린도후서", "고린도전서", "고린도후서", "고린도전서", "고린도전서", "고린도전서", "고린도전서", "고린도후서", "고린도후서", "갈라디아서", "에베소서", "골로새서", "신약 종합", "빌립보서", "에베소서", "빌레몬서", "빌레몬서", "디모데전서", "갈라디아서", "빌립보서", "골로새서", "갈라디아서", "에베소서", "빌립보서", "골로새서", "디모데후서", "디모데전서", "디모데전서", "데살로니가전서", "디도서", "디모데후서", "데살로니가전서", "데살로니가후서", "디모데후서", "신약 종합", "데살로니가후서", "데살로니가후서", "데살로니가전서", "디모데전서", "디모데후서", "히브리서", "히브리서", "야고보서", "야고보서", "야고보서", "신약 종합", "베드로전서", "베드로전서", "베드로전서", "베드로전서", "베드로전서", "베드로전서", "베드로후서", "베드로후서", "신약 종합", "유다서", "요한일서", "요한일서", "요한계시록", "요한계시록", "요한계시록"]};
+const BOOK_MAP = {"OT": ["창세기", "창세기", "창세기", "창세기", "창세기", "창세기", "창세기", "창세기", "창세기", "창세기", "창세기", "창세기", "창세기", "창세기", "창세기", "창세기", "창세기", "창세기", "창세기", "출애굽기", "출애굽기", "출애굽기", "출애굽기", "출애굽기", "출애굽기", "출애굽기", "출애굽기", "출애굽기", "민수기", "출애굽기", "레위기", "레위기", "레위기", "민수기", "레위기", "레위기", "레위기", "민수기", "민수기", "민수기", "민수기", "구약 종합", "신명기", "신명기", "신명기", "신명기", "신명기", "신명기", "신명기", "신명기", "여호수아", "여호수아", "여호수아", "여호수아", "여호수아", "여호수아", "룻기", "룻기", "룻기", "룻기", "사사기", "사사기", "사사기", "사사기", "사사기", "사사기", "사무엘상", "사무엘상", "사무엘상", "사무엘상", "사무엘하", "사무엘하", "사무엘하", "구약 종합", "구약 종합", "구약 종합", "사무엘하", "사무엘하", "사무엘하", "열왕기상", "열왕기상", "열왕기상", "열왕기하", "열왕기상", "구약 종합", "열왕기하", "구약 종합", "열왕기하", "열왕기하", "열왕기하", "구약 종합", "열왕기하", "에스라", "학개", "에스라", "에스라", "에스라", "에스라", "에스더", "역대하", "욥기", "욥기", "욥기", "욥기", "욥기", "욥기", "욥기", "욥기", "시편", "시편", "시편", "시편", "시편", "시편", "시편", "시편", "잠언", "잠언", "잠언", "잠언", "잠언", "전도서", "전도서", "전도서", "전도서", "전도서", "아가", "아가", "아가", "아가", "이사야", "이사야", "이사야", "이사야", "구약 종합", "이사야", "이사야", "이사야", "이사야", "이사야", "이사야", "구약 종합", "예레미야", "예레미야", "예레미야", "예레미야", "예레미야", "예레미야", "예레미야", "예레미야", "에스겔", "에스겔", "이사야", "예레미야", "에스겔", "에스겔", "에스겔", "에스겔", "에스겔", "에스겔", "다니엘", "다니엘", "다니엘", "다니엘", "다니엘", "호세아", "호세아", "호세아", "호세아", "요엘", "요엘", "요엘", "요엘", "아모스", "아모스", "아모스", "오바댜", "요나", "미가", "미가", "미가", "미가", "미가", "나훔", "나훔", "하박국", "하박국", "하박국", "스바냐", "스바냐", "학개", "학개", "스가랴", "스가랴", "스가랴", "스가랴", "스가랴", "말라기", "말라기", "이사야"], "NT": ["마태복음", "마태복음", "마태복음", "마태복음", "마태복음", "마태복음", "마태복음", "마태복음", "마태복음", "마태복음", "마태복음", "마태복음", "마태복음", "마태복음", "마태복음", "마태복음", "마태복음", "마태복음", "마태복음", "마태복음", "마가복음", "마가복음", "마가복음", "마가복음", "마가복음", "마가복음", "마가복음", "마가복음", "마가복음", "마가복음", "마가복음", "마가복음", "마가복음", "마가복음", "마가복음", "마가복음", "누가복음", "누가복음", "누가복음", "누가복음", "누가복음", "누가복음", "누가복음", "신약 종합", "누가복음", "누가복음", "누가복음", "누가복음", "누가복음", "누가복음", "누가복음", "신약 종합", "누가복음", "누가복음", "누가복음", "누가복음", "누가복음", "누가복음", "누가복음", "누가복음", "누가복음", "요한복음", "요한복음", "요한복음", "요한복음", "요한복음", "요한복음", "요한복음", "요한복음", "요한복음", "요한복음", "요한복음", "요한복음", "요한복음", "요한복음", "요한복음", "요한복음", "요한복음", "요한복음", "요한복음", "요한복음", "사도행전", "사도행전", "사도행전", "사도행전", "사도행전", "사도행전", "사도행전", "사도행전", "사도행전", "사도행전", "사도행전", "사도행전", "사도행전", "사도행전", "사도행전", "사도행전", "사도행전", "사도행전", "사도행전", "사도행전", "사도행전", "사도행전", "사도행전", "사도행전", "사도행전", "사도행전", "사도행전", "로마서", "로마서", "로마서", "로마서", "로마서", "로마서", "로마서", "로마서", "로마서", "로마서", "로마서", "로마서", "로마서", "로마서", "로마서", "로마서", "로마서", "로마서", "로마서", "신약 종합", "신약 종합", "로마서", "고린도전서", "고린도전서", "고린도전서", "고린도전서", "고린도후서", "고린도후서", "고린도전서", "고린도전서", "고린도전서", "고린도후서", "고린도전서", "고린도후서", "고린도전서", "고린도전서", "고린도전서", "고린도전서", "고린도후서", "고린도후서", "갈라디아서", "에베소서", "골로새서", "신약 종합", "빌립보서", "에베소서", "빌레몬서", "빌레몬서", "디모데전서", "갈라디아서", "빌립보서", "골로새서", "갈라디아서", "에베소서", "빌립보서", "골로새서", "디모데후서", "디모데전서", "디모데전서", "데살로니가전서", "디도서", "디모데후서", "데살로니가전서", "데살로니가후서", "디모데후서", "신약 종합", "데살로니가후서", "데살로니가후서", "데살로니가전서", "디모데전서", "디모데후서", "히브리서", "히브리서", "야고보서", "야고보서", "야고보서", "신약 종합", "베드로전서", "베드로전서", "베드로전서", "베드로전서", "베드로전서", "베드로전서", "베드로후서", "베드로후서", "신약 종합", "유다서", "요한일서", "요한일서", "요한계시록", "요한계시록", "요한계시록"]};
 function seqQuestions(mode=seqMode){
   if(mode.startsWith('book:')){const [,sec,book]=mode.split(':');return ALL.filter(q=>q.sec===sec && BOOK_MAP[sec][q.num-1]===book);}
   return mode==='nt'?NT_ARR:OT_ARR;
@@ -792,7 +781,7 @@ function renderBookBanners(){
 window.addEventListener('load',renderBookBanners);
 
 // 전역 상태
-let queue=[], qIdx=0, okSet=new Set(), noSet=new Set(), answered=false, isRetry=false, isSeq=false, seqMode='', streak=0, bestStreak=0;
+let queue=[], qIdx=0, okSet=new Set(), noSet=new Set(), answered=false, isRetry=false, isSeq=false, seqMode='', rndMode='all', streak=0, bestStreak=0;
 let OT_ARR=[], NT_ARR=[];
 window.addEventListener('load', () => {
   OT_ARR = ALL.filter(q => q.sec==='OT');
@@ -803,6 +792,11 @@ window.addEventListener('load', () => {
 const SAVE_KEY_OT = 'bqOTSave';
 const SAVE_KEY_NT = 'bqNTSave';
 const SAVE_KEY_RND = 'bqRndSave';
+const SAVE_KEY_RND_OT = 'bqOTRndSave';
+const SAVE_KEY_RND_NT = 'bqNTRndSave';
+function randomSaveKey(mode=rndMode) { return mode==='ot' ? SAVE_KEY_RND_OT : mode==='nt' ? SAVE_KEY_RND_NT : SAVE_KEY_RND; }
+function randomTitle(mode) { return mode==='ot' ? '구약 200문제 무작위로 풀기' : mode==='nt' ? '신약 200문제 무작위로 풀기' : '구·신약 400문제 무작위로 풀기'; }
+function randomQuestions(mode=rndMode) { return mode==='ot' ? OT_ARR : mode==='nt' ? NT_ARR : ALL; }
 const WRONG_NOTE_KEY = 'bqWrongNote';
 const WRONG_PROGRESS_KEY = 'bqWrongProgress';
 
@@ -864,7 +858,7 @@ function clickWrongNote() {
     document.querySelector('#screen-resume-rnd button:nth-of-type(1)').setAttribute('onclick', 'doResumeWrongNote()');
     document.querySelector('#screen-resume-rnd button:nth-of-type(2)').setAttribute('onclick', 'startWrongNote()');
     document.getElementById('resume-info-rnd').textContent =
-      s.qIdx + '번 문제까지 풀었습니다 (정답 ' + s.okArr.length + '개 / 오답 ' + s.noArr.length + '개)';
+      s.qIdx + '문항을 풀었습니다 (정답 ' + s.okArr.length + '개 / 오답 ' + s.noArr.length + '개)';
     showScreen('screen-resume-rnd');
   } else {
     startWrongNote();
@@ -914,12 +908,13 @@ function saveLocal() {
   if (isRetry) return;
   try {
     const data = JSON.stringify({
-      qIdx: qIdx,
+      qIdx: isSeq && seqMode.startsWith('book:') && answered ? qIdx + 1 : qIdx,
+      started: isSeq && seqMode.startsWith('book:') ? true : undefined,
       okArr: [...okSet],
       noArr: [...noSet],
       queueIds: isSeq ? null : queue.map(q => ALL.indexOf(q))
     });
-    const key = isSeq ? seqSaveKey() : SAVE_KEY_RND;
+    const key = isSeq ? seqSaveKey() : randomSaveKey();
     localStorage.setItem(key, data);
     sessionStorage.setItem(key, data);
   } catch(e) {}
@@ -930,11 +925,12 @@ function clearLocalSeq() {
     localStorage.removeItem(key); sessionStorage.removeItem(key);
   } catch(e) {}
 }
-function clearLocalRnd() {
-  try { localStorage.removeItem(SAVE_KEY_RND); sessionStorage.removeItem(SAVE_KEY_RND); } catch(e) {}
+function clearLocalRnd(mode=rndMode) {
+  const key = randomSaveKey(mode);
+  try { localStorage.removeItem(key); sessionStorage.removeItem(key); } catch(e) {}
 }
 function loadLocal(mode) {
-  const key = mode==='rnd' ? SAVE_KEY_RND : mode==='wrongnote' ? WRONG_PROGRESS_KEY : seqSaveKey(mode);
+  const key = ['ot','nt','all'].includes(mode) ? randomSaveKey(mode) : mode==='rnd' ? SAVE_KEY_RND : mode==='wrongnote' ? WRONG_PROGRESS_KEY : seqSaveKey(mode);
   try {
     const raw = localStorage.getItem(key) || sessionStorage.getItem(key);
     const s = JSON.parse(raw);
@@ -1028,11 +1024,11 @@ function clickSeq(mode) {
   seqMode = mode || 'ot';
   const seqLen = seqQuestions().length;
   const s = loadLocal(seqMode) || (seqMode.startsWith('book:') ? null : loadFromUrl());
-  if (s && s.qIdx > 0 && s.qIdx < seqLen) {
+  if (s && (s.started || s.qIdx > 0) && s.qIdx < seqLen) {
     const title = seqTitle();
     document.getElementById('resume-seq-title').textContent = title;
     document.getElementById('resume-info').textContent =
-      s.qIdx + '번 문제까지 풀었습니다 (정답 ' + s.okArr.length + '개 / 오답 ' + s.noArr.length + '개)';
+      s.qIdx + '문항을 풀었습니다 (정답 ' + s.okArr.length + '개 / 오답 ' + s.noArr.length + '개)';
     showScreen('screen-resume');
   } else {
     startSeq();
@@ -1043,6 +1039,7 @@ function startSeq() {
   clearLocalSeq();
   queue = seqQuestions();
   qIdx=0; okSet=new Set(); noSet=new Set(); answered=false; isRetry=false; isSeq=true; streak=0;
+  if (seqMode.startsWith('book:')) saveLocal();
   showScreen('quiz-screen');
   renderQ();
 }
@@ -1058,32 +1055,35 @@ function doResume() {
   renderQ();
 }
 
-function clickRandom() {
-  const s = loadLocal('rnd');
+function clickRandom(mode='all') {
+  rndMode=mode;
+  const s = loadLocal(mode);
   if (s && s.queueIds && s.queueIds.length > 0 && s.qIdx >= 0) {
-    document.getElementById('screen-resume-rnd').querySelector('h1').textContent = '무작위로 풀기';
-    document.querySelector('#screen-resume-rnd button:nth-of-type(1)').setAttribute('onclick', 'doResumeRnd()');
-    document.querySelector('#screen-resume-rnd button:nth-of-type(2)').setAttribute('onclick', 'startRandom()');
+    document.getElementById('screen-resume-rnd').querySelector('h1').textContent = randomTitle(mode);
+    document.querySelector('#screen-resume-rnd button:nth-of-type(1)').setAttribute('onclick', `doResumeRnd('${mode}')`);
+    document.querySelector('#screen-resume-rnd button:nth-of-type(2)').setAttribute('onclick', `startRandom('${mode}')`);
     document.getElementById('resume-info-rnd').textContent =
-      s.qIdx + '번 문제까지 풀었습니다 (정답 ' + s.okArr.length + '개 / 오답 ' + s.noArr.length + '개)';
+      s.qIdx + '문항을 풀었습니다 (정답 ' + s.okArr.length + '개 / 오답 ' + s.noArr.length + '개)';
     showScreen('screen-resume-rnd');
   } else {
-    startRandom();
+    startRandom(mode);
   }
 }
 
-function startRandom() {
-  clearLocalRnd();
-  queue=shuffle([...ALL]); qIdx=0; okSet=new Set(); noSet=new Set(); answered=false; isRetry=false; isSeq=false; streak=0;
-  saveLocal(); // 시작 즉시 순서 저장
+function startRandom(mode=rndMode) {
+  rndMode=mode;
+  clearLocalRnd(mode);
+  queue=shuffle([...randomQuestions(mode)]); qIdx=0; okSet=new Set(); noSet=new Set(); answered=false; isRetry=false; isSeq=false; streak=0;
+  saveLocal(); // 시작 즉시 문제 순서를 저장
   showScreen('quiz-screen');
   renderQ();
 }
 
-function doResumeRnd() {
-  const s = loadLocal('rnd');
-  if (!s || !s.queueIds) { startRandom(); return; }
-  queue = s.queueIds.map(i => ALL[i]);
+function doResumeRnd(mode=rndMode) {
+  rndMode=mode;
+  const s = loadLocal(mode);
+  if (!s || !s.queueIds) { startRandom(mode); return; }
+  queue = s.queueIds.map(i => ALL[i]).filter(Boolean);
   qIdx=s.qIdx; okSet=new Set(s.okArr); noSet=new Set(s.noArr);
   answered=false; isRetry=false; isSeq=false; streak=0;
   history.replaceState(null, '', location.pathname);
@@ -1173,12 +1173,19 @@ function pick(i, ans, btn, q) {
 
 function nextQ() {
   qIdx++;
+  answered = false;
   if (!isRetry) saveLocal();
   if (currentRetryIsWrongNote) saveWrongProgress();
   renderQ();
 }
 
 function endEarly() {
+  if (isSeq && seqMode.startsWith('book:') && !isRetry) {
+    if (qIdx + (answered ? 1 : 0) >= queue.length) { showResult(); return; }
+    saveLocal();
+    goMain();
+    return;
+  }
   showResult();
 }
 
@@ -1259,7 +1266,7 @@ window.addEventListener('load', () => {
   const s = loadFromUrl();
   if (s && s.qIdx > 0) {
     document.getElementById('resume-info').textContent =
-      s.qIdx + '번 문제까지 풀었습니다 (정답 ' + s.okArr.length + '개 / 오답 ' + s.noArr.length + '개)';
+      s.qIdx + '문항을 풀었습니다 (정답 ' + s.okArr.length + '개 / 오답 ' + s.noArr.length + '개)';
     showScreen('screen-resume');
   }
 });
