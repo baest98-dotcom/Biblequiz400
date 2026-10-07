@@ -1,4 +1,4 @@
-const CACHE = 'bible-quiz-v4';
+const CACHE = 'bible-quiz-v5';
 const FILES = ['/', '/index.html', '/manifest.json'];
 
 self.addEventListener('install', e => {
