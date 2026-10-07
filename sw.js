@@ -1,30 +1,28 @@
-const CACHE = 'bible-quiz-v5';
-const FILES = ['/', '/index.html', '/manifest.json'];
-
-self.addEventListener('install', e => {
-  e.waitUntil(
-    caches.open(CACHE).then(c => c.addAll(FILES)).then(() => self.skipWaiting())
-  );
+const CACHE = 'bible-quiz-pdf-20260903-v6';
+const FILES = ['./', './index.html', './manifest.json'];
+self.addEventListener('install', event => {
+  event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(FILES)).then(() => self.skipWaiting()));
 });
-
-self.addEventListener('activate', e => {
-  e.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
-    ).then(() => self.clients.claim())
-  );
+self.addEventListener('activate', event => {
+  event.waitUntil(caches.keys().then(keys => Promise.all(
+    keys.filter(key => key.startsWith('bible-quiz-') && key !== CACHE).map(key => caches.delete(key))
+  )).then(() => self.clients.claim()));
 });
-
-// 네트워크 우선: 항상 최신 파일을 먼저 시도하고, 실패(오프라인)할 때만 캐시 사용
-self.addEventListener('fetch', e => {
-  e.respondWith(
-    fetch(e.request)
-      .then(res => {
-        // 성공하면 최신 버전을 캐시에도 갱신해둠
-        const resClone = res.clone();
-        caches.open(CACHE).then(c => c.put(e.request, resClone));
-        return res;
-      })
-      .catch(() => caches.match(e.request).then(cached => cached || caches.match('/index.html')))
-  );
+self.addEventListener('fetch', event => {
+  if (event.request.method !== 'GET' || new URL(event.request.url).origin !== self.location.origin) return;
+  event.respondWith(fetch(event.request).then(response => {
+    if (response.ok) {
+      const copy = response.clone();
+      event.waitUntil(caches.open(CACHE).then(cache => cache.put(event.request, copy)));
+    }
+    return response;
+  }).catch(async () => {
+    const cached = await caches.match(event.request);
+    if (cached) return cached;
+    if (event.request.mode === 'navigate') {
+      const fallback = await caches.match(new URL('./index.html', self.registration.scope).href);
+      if (fallback) return fallback;
+    }
+    return Response.error();
+  }));
 });
