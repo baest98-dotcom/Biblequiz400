@@ -387,7 +387,48 @@ body{font-family:var(--font-sans)}
     message.textContent = help;
     dialog.showModal();
   }
+  // Keep Chrome handoff synchronous with the user's tap.
+  function openInChrome() {
+    const target = new URL(window.location.href);
+    if (!/^https?:$/.test(target.protocol)) { showHelp(); return; }
+    target.searchParams.set('install', '1');
+    target.hash = 'install-app';
+    const fallback = target.href;
+    const intentData = target.host + target.pathname + target.search;
+    const intent = 'intent://' + intentData + '#Intent;scheme=' + target.protocol.slice(0, -1)
+      + ';package=com.android.chrome;S.browser_fallback_url=' + encodeURIComponent(fallback) + ';end';
+    let timer;
+    function cancelFallback() {
+      if (document.visibilityState === 'hidden') cleanup();
+    }
+    function cleanup() {
+      clearTimeout(timer);
+      document.removeEventListener('visibilitychange', cancelFallback);
+      window.removeEventListener('pagehide', cleanup);
+    }
+    document.addEventListener('visibilitychange', cancelFallback);
+    window.addEventListener('pagehide', cleanup);
+    timer = setTimeout(() => {
+      cleanup();
+      if (document.visibilityState === 'visible') {
+        message.textContent = 'Chrome이 열리지 않았다면 카카오톡 메뉴에서 “다른 브라우저로 열기”를 선택해 주세요.\n\nChrome에서 이 페이지를 연 다음 “앱 설치하기”를 한 번 더 눌러 주세요.';
+        if (!dialog.open) dialog.showModal();
+      }
+    }, 2500);
+    try { window.location.href = intent; }
+    catch (_) { cleanup(); showHelp(); }
+  }
+  if (new URL(window.location.href).searchParams.get('install') === '1') {
+    window.addEventListener('load', () => {
+      if (!button.hidden) {
+        button.scrollIntoView({block: 'center'});
+        button.focus({preventScroll: true});
+      }
+    });
+  }
   button.addEventListener('click', async () => {
+    const ua = navigator.userAgent || '';
+    if (/Android/i.test(ua) && /KAKAOTALK/i.test(ua)) { openInChrome(); return; }
     if (!installPrompt) { showHelp(); return; }
     const prompt = installPrompt;
     installPrompt = null;
