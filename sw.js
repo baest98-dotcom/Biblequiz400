@@ -1,4 +1,4 @@
-const CACHE = 'bible-quiz-pdf-20260903-v9';
+const CACHE = 'bible-quiz-pdf-20260903-v7';
 const FILES = ['./', './index.html', './manifest.json'];
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(FILES)).then(() => self.skipWaiting()));
